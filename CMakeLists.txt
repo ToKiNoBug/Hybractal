@@ -4,6 +4,8 @@ project(Hybractal VERSION 0.1.0 LANGUAGES CXX)
 include(CTest)
 enable_testing()
 
+include(cmake/configure_fractal_utils.cmake)
+
 add_subdirectory(libHybractal)
 
 set(CPACK_PROJECT_NAME ${PROJECT_NAME})
