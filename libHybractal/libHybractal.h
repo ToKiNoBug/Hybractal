@@ -2,9 +2,13 @@
 #define HYBRACTAL_LIBHYBRACTAL_H
 
 #include <complex>
+#include <stddef.h>
+#include <stdint.h>
 #include <type_traits>
 
 namespace libHybractal {
+
+static constexpr uint16_t maxit_max = UINT16_MAX - 1;
 
 template <typename float_t>
 inline void iterate_mandelbrot(std::complex<float_t> &z,
@@ -146,5 +150,12 @@ constexpr uint64_t static_strlen(const const_str<N> &str) noexcept {
                                     ::libHybractal::static_strlen(str)>
 
 } // namespace libHybractal
+
+#include <fractal_map.h>
+
+void compute_frame(const fractal_utils::center_wind<double> &wind_C,
+                   const uint16_t maxit,
+                   fractal_utils::fractal_map &map_age_u16,
+                   fractal_utils::fractal_map *map_z_nullable) noexcept;
 
 #endif // HYBRACTAL_LIBHYBRACTAL_H

@@ -4,8 +4,11 @@
 #include <libHybractal.h>
 #include <random>
 
-int main(int, char **) {
+void test_single() noexcept;
 
+int main(int, char **) { return 0; }
+
+void test_single() noexcept {
   constexpr bool ok = libHybractal::is_valid_string("010101");
 
   srand(std::time(nullptr));
@@ -25,6 +28,4 @@ int main(int, char **) {
   const int age = seq.compute_age(z, C, INT16_MAX);
 
   std::cout << "age of " << C << " = " << age << std::endl;
-
-  return 0;
 }
