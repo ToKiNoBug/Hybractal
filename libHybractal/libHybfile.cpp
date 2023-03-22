@@ -1,57 +1,58 @@
 #include "libHybfile.h"
-
 #include <fmt/format.h>
+#include <iostream>
 
-libHybractal::hybf_file::hybf_file(size_t __rows, size_t __cols, bool has_mat_z)
-    : mat_age{__rows, __cols, sizeof(uint16_t)}, mat_z(std::nullopt) {
-  if (has_mat_z) {
-    this->mat_z.emplace(fractal_utils::fractal_map(
-        __rows, __cols, sizeof(std::complex<double>)));
+libHybractal::hybf_archive::hybf_archive(size_t rows, size_t cols,
+                                         bool have_z) {
+  this->m_info.rows = rows;
+  this->m_info.cols = cols;
+  this->data_age.resize(rows * cols);
+  if (have_z) {
+    this->data_z.resize(rows * cols);
   }
 }
-
-libHybractal::hybf_file::hybf_file() : hybf_file{0, 0, false} {}
-
-libHybractal::hybf_file::hybf_file(
-    hybf_metainfo &info_src, fractal_utils::fractal_map &&mat_age_src,
-    std::optional<fractal_utils::fractal_map> &&mat_z_src)
-    : info(info_src), mat_age(mat_age_src), mat_z(mat_z_src) {}
 
 #include <zstd.h>
 
 void libHybractal::compress(const void *src, size_t bytes,
                             std::vector<uint8_t> &dest) noexcept {
   dest.clear();
-  dest.reserve(ZSTD_compressBound(bytes) + 128);
-  while (true) {
-    const size_t size = ZSTD_compress(dest.data(), dest.capacity(), src, bytes,
-                                      ZSTD_maxCLevel());
+  dest.resize(ZSTD_compressBound(bytes) + 128);
 
-    if (ZSTD_isError(size)) {
-      dest.reserve(dest.capacity() * 2);
-      continue;
-    }
+  const size_t size =
+      ZSTD_compress(dest.data(), dest.size(), src, bytes, ZSTD_defaultCLevel());
 
-    dest.resize(size);
-    break;
+  if (ZSTD_isError(size) || size > dest.capacity()) {
+    std::cerr << fmt::format(
+                     "compress failed. error code = {}, error name = {}.", size,
+                     ZSTD_getErrorName(size))
+              << std::endl;
+    abort();
+    return;
   }
+
+  dest.resize(size);
 }
 
 void libHybractal::decompress(const void *src, size_t src_bytes,
                               std::vector<uint8_t> &dest) noexcept {
-  while (true) {
 
-    const size_t size =
-        ZSTD_decompress(dest.data(), dest.capacity(), src, src_bytes);
-
-    if (size <= 0) {
-      dest.reserve(dest.capacity() * 4);
-      continue;
-    } else {
-      dest.resize(size);
-      break;
-    }
+  const size_t dst_bytes = ZSTD_getDecompressedSize(src, src_bytes);
+  dest.resize(dst_bytes);
+  const size_t capacity = dest.size();
+  const size_t ret = ZSTD_decompress(dest.data(), capacity, src, src_bytes);
+  if (ZSTD_isError(ret) || ret > capacity) {
+    std::cerr << fmt::format(
+                     "compress failed. error code = {}, error name = {}.", ret,
+                     ZSTD_getErrorName(ret))
+              << std::endl;
+    abort();
+    return;
   }
+
+  assert(ret <= capacity);
+
+  dest.resize(ret);
 }
 
 std::vector<uint8_t> libHybractal::compress(const void *src,
@@ -68,167 +69,103 @@ std::vector<uint8_t> libHybractal::compress(const void *src,
 #include <vector>
 
 enum seg_id : int64_t {
-  id_metainfo = 0,
+  id_metainfo = 666,
   id_mat_age = 114514,
   id_mat_z = 1919810,
 };
 
-struct info_for_serial_s {
-  libHybractal::hybf_metainfo info;
-  size_t rows;
-  size_t cols;
-};
+libHybractal::hybf_archive
+libHybractal::hybf_archive::load(std::string_view filename,
+                                 std::vector<uint8_t> &buffer,
+                                 std::string *err) noexcept {
+  fractal_utils::binfile bfile;
 
-const fractal_utils::data_block *find_block(const fractal_utils::binfile &bf,
-                                            seg_id tag) noexcept {
-
-  for (const auto &blk : bf.blocks) {
-    if (blk.tag == tag) {
-      return &blk;
-    }
+  if (!bfile.parse_from_file(filename.data())) {
+    err->assign(fmt::format("Failed to parse {}.", filename));
+    return {};
   }
-
-  return nullptr;
-}
-
-libHybractal::hybf_file
-libHybractal::hybf_file::load(std::string_view filename,
-                              std::vector<uint8_t> &buffer,
-                              std::string *err) noexcept {
-
-  fractal_utils::binfile binfile;
-
-  if (!binfile.parse_from_file(filename.data())) {
-    err->assign("binfile.parse_from_file failed.");
-    return hybf_file{};
-  }
-
-  libHybractal::hybf_metainfo mtif;
-  size_t rows, cols;
+  hybf_archive result;
   {
-    auto blkp_info = find_block(binfile, id_metainfo);
-    if (blkp_info == nullptr) {
+    auto blkp_meta = bfile.find_block_single(id_metainfo);
+    if (blkp_meta == nullptr) {
       err->assign("metadata not found.");
-      return hybf_file{};
+      return {};
     }
+    struct_pack::errc error_code = struct_pack::deserialize_to(
+        result.m_info, (const char *)blkp_meta->data, blkp_meta->bytes);
 
-    info_for_serial_s ifss;
-    struct_pack::errc errcode = struct_pack::deserialize_to(
-        ifss, (const char *)blkp_info->data, blkp_info->bytes);
-
-    if (errcode != struct_pack::errc::ok) {
-      err->assign("struct_pack failed to parse.");
-      return hybf_file{};
-    }
-
-    mtif = ifss.info;
-
-    rows = ifss.rows;
-    cols = ifss.cols;
-
-    if (rows <= 0 || cols <= 0) {
-      err->assign(fmt::format("rows = {}, cols = {}", rows, cols));
-      return hybf_file{};
+    if (error_code != struct_pack::errc::ok) {
+      err->assign(fmt::format("deserialization failed. error code = {}",
+                              (int64_t)error_code));
+      return {};
     }
   }
-
-  fractal_utils::fractal_map map_age(rows, cols, sizeof(uint16_t));
+  const size_t rows = result.rows();
+  const size_t cols = result.cols();
 
   buffer.reserve(rows * cols * sizeof(std::complex<double>));
-  buffer.clear();
-  {
-    const auto *blkp_age = find_block(binfile, seg_id::id_mat_age);
 
+  {
+    auto blkp_age = bfile.find_block_single(id_mat_age);
     if (blkp_age == nullptr) {
-      err->assign("Failed to find mat_age");
-      return hybf_file{};
+      err->assign("mat_age not found.");
+      return {};
     }
 
     decompress(blkp_age->data, blkp_age->bytes, buffer);
 
     if (buffer.size() != rows * cols * sizeof(uint16_t)) {
       err->assign(fmt::format(
-          "mat_age size mismatch. Expected {} bytes, but infact {} bytes.",
+          "Size of mat_age mismatch. Expected {} but in fact bytes.",
           rows * cols * sizeof(uint16_t), buffer.size()));
-      return hybf_file{};
+      return {};
     }
-    memcpy(map_age.data, buffer.data(), map_age.byte_count());
+
+    result.data_age.resize(result.rows() * result.cols());
+    memcpy(result.data_age.data(), buffer.data(), buffer.size());
   }
 
-  hybf_file ret{mtif, std::move(map_age), std::nullopt};
-
   {
-    const auto *blkp_z = find_block(binfile, seg_id::id_mat_z);
-
+    auto blkp_z = bfile.find_block_single(id_mat_z);
     if (blkp_z != nullptr) {
-      buffer.reserve(rows * cols * sizeof(std::complex<double>));
-      buffer.clear();
-
       decompress(blkp_z->data, blkp_z->bytes, buffer);
 
       if (buffer.size() != rows * cols * sizeof(std::complex<double>)) {
-        err->assign(fmt::format("mat_z size mismatch. Expected {} bytes, but "
-                                "in fact {} bytes.",
-                                rows * cols * sizeof(std::complex<double>),
-                                buffer.size()));
-        return hybf_file{};
+        err->assign(fmt::format(
+            "Size of mat_age mismatch. Expected {} but in fact bytes.",
+            rows * cols * sizeof(std::complex<double>), buffer.size()));
+        return {};
       }
-      fractal_utils::fractal_map mat_z_src{rows, cols,
-                                           sizeof(std::complex<double>)};
-
-      memcpy(mat_z_src.data, buffer.data(), buffer.size());
-
-      ret.mat_z.emplace(std::move(mat_z_src));
+      result.data_z.resize(buffer.size());
+      memcpy(result.data_z.data(), buffer.data(), buffer.size());
     }
   }
 
-  err->clear();
-
-  return ret;
+  return result;
 }
 
-libHybractal::hybf_file
-libHybractal::hybf_file::load(std::string_view filename,
-                              std::string *err) noexcept {
-  std::vector<uint8_t> buffer;
-  return load(filename, buffer, err);
-}
+bool libHybractal::hybf_archive::save(
+    std::string_view filename) const noexcept {
+  fractal_utils::binfile bfile;
 
-bool libHybractal::hybf_file::save(std::string_view filename) const noexcept {
+  std::vector<char> meta_info_seralized = struct_pack::serialize(this->m_info);
+  bfile.blocks.emplace_back(
+      fractal_utils::data_block{id_metainfo, meta_info_seralized.size(), 0,
+                                meta_info_seralized.data(), false});
 
-  fractal_utils::binfile binfile;
+  auto compressed_age{compress(this->data_age.data(),
+                               this->data_age.size() * sizeof(uint16_t))};
+  bfile.blocks.emplace_back(fractal_utils::data_block{
+      id_mat_age, compressed_age.size(), 0, compressed_age.data(), false});
 
-  binfile.callback_free = nullptr;
-  binfile.callback_malloc = nullptr;
+  std::vector<uint8_t> compressed_z{};
 
-  std::vector<char> data_metainfo;
-  {
-    info_for_serial_s ifss{this->info, this->rows(), this->cols()};
-
-    struct_pack::serialize_to(data_metainfo, ifss);
+  if (this->have_mat_z()) {
+    compressed_z = compress(this->data_z.data(),
+                            this->data_z.size() * sizeof(this->data_z[0]));
+    bfile.blocks.emplace_back(fractal_utils::data_block{
+        id_mat_z, compressed_z.size(), 0, compressed_z.data(), false});
   }
 
-  binfile.blocks.emplace_back(fractal_utils::data_block{
-      id_metainfo, data_metainfo.size(), 0, data_metainfo.data()});
-
-  std::vector<uint8_t> data_age =
-      compress(this->mat_age.data, this->mat_age.byte_count());
-  {
-    binfile.blocks.emplace_back(fractal_utils::data_block{
-        id_mat_age, data_age.size(), 0, data_age.data()});
-  }
-
-  std::vector<uint8_t> data_mat_z;
-  if (this->have_z_mat()) {
-    const auto &ref = this->mat_z.value();
-    data_mat_z = compress(ref.data, ref.byte_count());
-    binfile.blocks.emplace_back(fractal_utils::data_block{
-        id_mat_z, data_mat_z.size(), 0, data_mat_z.data()});
-  }
-  const bool ok = fractal_utils::serialize_to_file(
-      binfile.blocks.data(), binfile.blocks.size(), true, filename.data());
-
-  binfile.blocks.clear();
-
-  return ok;
+  return bfile.save_to_file(filename.data(), true);
 }
