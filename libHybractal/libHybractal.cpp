@@ -2,10 +2,10 @@
 #include <assert.h>
 #include <omp.h>
 
-void compute_frame(const fractal_utils::center_wind<double> &wind_C,
-                   const uint16_t maxit,
-                   fractal_utils::fractal_map &map_age_u16,
-                   fractal_utils::fractal_map *map_z) noexcept {
+void libHybractal::compute_frame(
+    const fractal_utils::center_wind<double> &wind_C, const uint16_t maxit,
+    fractal_utils::fractal_map &map_age_u16,
+    fractal_utils::fractal_map *map_z) noexcept {
   if (map_z != nullptr) {
     assert(map_z->rows == map_age_u16.rows);
     assert(map_z->cols == map_age_u16.cols);

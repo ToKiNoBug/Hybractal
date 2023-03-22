@@ -5,6 +5,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <type_traits>
+#include <vector>
 
 namespace libHybractal {
 
@@ -153,9 +154,12 @@ constexpr uint64_t static_strlen(const const_str<N> &str) noexcept {
 
 #include <fractal_map.h>
 
+namespace libHybractal {
 void compute_frame(const fractal_utils::center_wind<double> &wind_C,
                    const uint16_t maxit,
                    fractal_utils::fractal_map &map_age_u16,
                    fractal_utils::fractal_map *map_z_nullable) noexcept;
+
+} // namespace libHybractal
 
 #endif // HYBRACTAL_LIBHYBRACTAL_H
