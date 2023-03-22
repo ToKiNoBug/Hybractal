@@ -12,6 +12,12 @@ find_package(fractal_utils COMPONENTS core_utils REQUIRED)
 find_package(OpenMP REQUIRED)
 target_link_libraries(Hybractal PUBLIC fractal_utils::core_utils OpenMP::OpenMP_CXX)
 
+if(NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
+    if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+        target_compile_options(Hybractal PRIVATE "-Ofast")
+    endif()
+endif()
+
 # file
 include(${CMAKE_SOURCE_DIR}/cmake/configure_yalantinglibs.cmake)
 find_package(yalantinglibs REQUIRED)
