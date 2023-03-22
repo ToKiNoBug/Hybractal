@@ -4,9 +4,9 @@ project(Hybractal VERSION 0.1.0 LANGUAGES CXX)
 include(CTest)
 enable_testing()
 
-add_compile_definitions(HYBRACTAL_SEQUENCE_STR="10101")
+set(CMAKE_CXX_EXTENSIONS OFF)
 
-include(cmake/configure_fractal_utils.cmake)
+add_compile_definitions(HYBRACTAL_SEQUENCE_STR="10101")
 
 add_subdirectory(libHybractal)
 add_subdirectory(hybractal)

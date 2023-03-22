@@ -1,1 +1,27 @@
-syntax = "proto2";
+syntax = "proto3";
+
+message sequence_t {
+  uint64 binary = 1;
+  uint64 length = 2;
+}
+
+message window_t {
+  double center_x = 1;
+  double center_y = 2;
+  double x_span = 3;
+  double y_span = 4;
+}
+
+message attribute_t {
+  sequence_t sequence = 1;
+  window_t window = 2;
+  uint64 rows = 3;
+  uint64 cols = 4;
+  int32 maxit = 5;
+}
+
+message hybractal_file_t {
+  attribute_t attribute = 1;
+  bytes mat_age = 2;
+  optional bytes mat_z = 3;
+}
