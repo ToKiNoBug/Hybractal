@@ -1,8 +1,10 @@
 #include <CLI11.hpp>
+#include <hex_convert.h>
 #include <libHybfile.h>
 #include <libHybractal.h>
 #include <omp.h>
 #include <thread>
+#include <variant>
 
 struct task_compute {
   libHybractal::hybf_metainfo info;
@@ -13,6 +15,8 @@ struct task_compute {
     this->info.window_xy_span[0] =
         this->info.window_xy_span[1] * info.cols / info.rows;
   }
+
+  void override_center(const std::array<uint64_t, 2> &src) noexcept;
 };
 
 bool run_compute(const task_compute &task) noexcept;
@@ -31,7 +35,15 @@ int main(int argc, char **argv) {
   compute->add_option("--maxit", task_c.info.maxit)
       ->default_val(1024)
       ->check(CLI::Range(uint16_t(1), libHybractal::maxit_max));
-  compute->add_option("--center", task_c.info.window_center)->required();
+
+  std::string center_hex;
+
+  CLI::Option *const opt_center_double =
+      compute->add_option("--center", task_c.info.window_center)
+          ->expected(0, 1);
+  CLI::Option *const opt_center_hex =
+      compute->add_option("--center-hex,--chx", center_hex)->expected(0, 1);
+
   compute->add_option("--x-span,--span-x", task_c.info.window_xy_span[0])
       ->default_val(-1);
   compute->add_option("--y-span,--span-y", task_c.info.window_xy_span[1])
@@ -46,6 +58,31 @@ int main(int argc, char **argv) {
 
   if (compute->count() > 0) {
     task_c.override_x_span();
+
+    if (opt_center_hex->count() > 0) {
+      if (center_hex.size() != 32 && center_hex.size() != 34) {
+        std::cerr
+            << "Invalid value for center_hex, expceted 32 or 34 characters"
+            << std::endl;
+        return 1;
+      }
+
+      auto ret =
+          fractal_utils::hex_2_bin(center_hex, task_c.info.window_center.data(),
+                                   sizeof(task_c.info.window_center));
+      if (!ret.has_value() ||
+          ret.value() != sizeof(task_c.info.window_center)) {
+        std::cerr << "Invalid value for center_hex" << std::endl;
+        return 1;
+      }
+    } else {
+
+      if (opt_center_double->count() <= 0) {
+        std::cerr << "No value for center" << std::endl;
+        return 1;
+      }
+    }
+
     if (!run_compute(task_c)) {
       std::cerr << "run_compute failed." << std::endl;
       return 1;
