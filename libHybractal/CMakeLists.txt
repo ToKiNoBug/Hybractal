@@ -15,18 +15,22 @@ target_link_libraries(Hybractal PUBLIC fractal_utils::core_utils OpenMP::OpenMP_
 # file
 include(${CMAKE_SOURCE_DIR}/cmake/configure_yalantinglibs.cmake)
 find_package(yalantinglibs REQUIRED)
-find_package(LZ4 REQUIRED)
+find_package(zstd REQUIRED)
 find_package(fmtlib REQUIRED)
 add_library(Hybfile STATIC libHybfile.h libHybfile.cpp)
 target_compile_features(Hybfile PUBLIC cxx_std_20)
 target_include_directories(Hybfile INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
-target_link_libraries(Hybfile PUBLIC Hybractal yalantinglibs::struct_pack LZ4::lz4_shared fmt::fmt)
+target_link_libraries(Hybfile PUBLIC Hybractal yalantinglibs::struct_pack zstd::libzstd_shared fmt::fmt)
 
 # tests
 add_executable(test_compute test_compute.cpp)
-target_link_libraries(test_compute PUBLIC Hybractal)
+target_link_libraries(test_compute PRIVATE Hybractal)
 
 include(${CMAKE_SOURCE_DIR}/cmake/configure_cli11.cmake)
 add_executable(test_export test_export.cpp)
-target_link_libraries(test_export PUBLIC Hybractal Hybfile)
-target_include_directories(test_export PUBLIC ${CLI11_include_dir})
+target_link_libraries(test_export PRIVATE Hybractal Hybfile)
+target_include_directories(test_export PRIVATE ${CLI11_include_dir})
+
+add_executable(test_load test_load.cpp)
+target_link_libraries(test_load PRIVATE Hybractal Hybfile fmt::fmt)
+target_include_directories(test_load PRIVATE ${CLI11_include_dir})

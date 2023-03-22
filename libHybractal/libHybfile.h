@@ -23,7 +23,12 @@ public:
   fractal_utils::fractal_map mat_age;
   std::optional<fractal_utils::fractal_map> mat_z;
 
-  hybf_file(size_t rows, size_t cols, bool has_mat_z);
+public:
+  explicit hybf_file();
+  explicit hybf_file(size_t rows, size_t cols, bool has_mat_z);
+  explicit hybf_file(hybf_metainfo &info_src,
+                     fractal_utils::fractal_map &&mat_age_src,
+                     std::optional<fractal_utils::fractal_map> &&mat_z_src);
 
   fractal_utils::center_wind<double> window() const noexcept {
     fractal_utils::center_wind<double> ret;
@@ -41,17 +46,19 @@ public:
   inline size_t cols() const noexcept { return this->mat_age.cols; }
 
   static hybf_file load(std::string_view filename, std::string *err) noexcept;
+  static hybf_file load(std::string_view filename, std::vector<uint8_t> &buffer,
+                        std::string *err) noexcept;
 
   bool save(std::string_view filename) const noexcept;
 };
 
-void compress_lz4(const void *src, size_t bytes,
-                  std::vector<uint8_t> &dest) noexcept;
+void compress(const void *src, size_t bytes,
+              std::vector<uint8_t> &dest) noexcept;
 
-std::vector<uint8_t> compress_lz4(const void *src, size_t bytes) noexcept;
+std::vector<uint8_t> compress(const void *src, size_t bytes) noexcept;
 
-void decompress_lz4(const void *src, size_t src_bytes,
-                    std::vector<uint8_t> &dest) noexcept;
+void decompress(const void *src, size_t src_bytes,
+                std::vector<uint8_t> &dest) noexcept;
 
 } // namespace libHybractal
 
