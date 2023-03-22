@@ -6,7 +6,11 @@
 
 void test_single() noexcept;
 
-int main(int, char **) { return 0; }
+int main(int, char **) {
+
+  test_single();
+  return 0;
+}
 
 void test_single() noexcept {
   constexpr bool ok = libHybractal::is_valid_string("010101");
