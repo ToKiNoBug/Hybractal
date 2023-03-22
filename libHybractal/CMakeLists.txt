@@ -8,7 +8,7 @@ include(${CMAKE_SOURCE_DIR}/cmake/configure_fmtlib.cmake)
 add_library(Hybractal STATIC libHybractal.h libHybractal.cpp)
 target_compile_features(Hybractal PUBLIC cxx_std_20)
 target_include_directories(Hybractal INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
-find_package(fractal_utils COMPONENTS core_utils REQUIRED)
+find_package(fractal_utils COMPONENTS core_utils render_utils REQUIRED)
 find_package(OpenMP REQUIRED)
 target_link_libraries(Hybractal PUBLIC fractal_utils::core_utils OpenMP::OpenMP_CXX)
 
