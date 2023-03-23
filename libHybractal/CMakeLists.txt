@@ -17,7 +17,7 @@ find_package(
   REQUIRED)
 find_package(OpenMP REQUIRED)
 target_link_libraries(Hybractal PUBLIC fractal_utils::core_utils
-                                       OpenMP::OpenMP_CXX)
+  OpenMP::OpenMP_CXX)
 
 if(NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
   if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
@@ -34,7 +34,7 @@ add_library(Hybfile STATIC libHybfile.h libHybfile.cpp)
 target_compile_features(Hybfile PUBLIC cxx_std_20)
 target_include_directories(Hybfile INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(Hybfile PUBLIC Hybractal yalantinglibs::struct_pack
-                                     zstd::libzstd_static fmt::fmt)
+  zstd::libzstd_static fmt::fmt)
 
 # tests
 add_executable(test_compute test_compute.cpp)
@@ -48,3 +48,7 @@ target_include_directories(test_export PRIVATE ${CLI11_include_dir})
 add_executable(test_load test_load.cpp)
 target_link_libraries(test_load PRIVATE Hybractal Hybfile fmt::fmt)
 target_include_directories(test_load PRIVATE ${CLI11_include_dir})
+
+install(TARGETS Hybractal Hybfile
+  RUNTIME DESTINATION bin
+  LIBRARY DESTINATION lib)
