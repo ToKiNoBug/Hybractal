@@ -118,7 +118,21 @@ int main(int argc, char **argv) {
   render->add_option("-o", task_r.png_file, "Generated png file.")
       ->default_val("out.png");
 
+  //////////////////////////////////////
+
+  bool show_config{false};
+
+  app.add_flag("--show-config,--sc", show_config,
+               "Show configuration when this program is built.")
+      ->default_val(false);
+
   CLI11_PARSE(app, argc, argv);
+
+  if (show_config) {
+    std::cout << fmt::format("Configured with : HYBRACTAL_SEQUENCE_STR = {}",
+                             HYBRACTAL_SEQUENCE_STR)
+              << std::endl;
+  }
 
   if (compute->count() > 0) {
     task_c.override_x_span();
