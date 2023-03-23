@@ -9,14 +9,15 @@ enable_testing()
 
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-add_compile_definitions(HYBRACTAL_SEQUENCE_STR="11111111110")
+add_compile_definitions(HYBRACTAL_SEQUENCE_STR="1011101")
+add_compile_definitions(_USE_MATH_DEFINES)
 
-message(STATUS "CMAKE_CXX_COMPILER = "${CMAKE_CXX_COMPILER})
-
+# message(STATUS "CMAKE_CXX_COMPILER = " ${CMAKE_CXX_COMPILER})
 cmake_path(GET CMAKE_CXX_COMPILER PARENT_PATH compiler_path)
 cmake_path(GET compiler_path PARENT_PATH compiler_path)
 list(APPEND CMAKE_PREFIX_PATH ${compiler_path})
-message(STATUS "CMAKE_PREFIX_PATH = " ${CMAKE_PREFIX_PATH})
+
+# message(STATUS "CMAKE_PREFIX_PATH = " ${CMAKE_PREFIX_PATH})
 unset(compiler_path)
 
 add_subdirectory(libHybractal)

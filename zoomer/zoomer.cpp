@@ -133,20 +133,21 @@ void render_fun(const fractal_utils::fractal_map &map_fractal,
 }
 
 bool export_fun(const fractal_utils::fractal_map &map_fractal,
-                const fractal_utils::wind_base &window, void *custom_ptr,
+                const fractal_utils::wind_base &__wind, void *custom_ptr,
                 const fractal_utils::fractal_map &map_u8c3_do_not_resize,
                 const char *filename) {
   auto *metainfo = reinterpret_cast<metainfo4gui_s *>(custom_ptr);
 
   libHybractal::hybf_archive archive{metainfo->info.rows, metainfo->info.cols,
                                      true};
-  {
-    const auto seq_ar = archive.metainfo().sequence_bin;
-    const auto seq_len = archive.metainfo().sequence_len;
-    archive.metainfo() = metainfo->info;
 
-    archive.metainfo().sequence_bin = seq_ar;
-    archive.metainfo().sequence_len = seq_len;
+  const auto wind =
+      dynamic_cast<const fractal_utils::center_wind<double> &>(__wind);
+
+  {
+    archive.metainfo().maxit = metainfo->info.maxit;
+    archive.metainfo().window_center = wind.center;
+    archive.metainfo().window_xy_span = {wind.x_span, wind.y_span};
   }
 
   memcpy(archive.map_age().data, map_fractal.data, map_fractal.byte_count());
