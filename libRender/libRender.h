@@ -57,6 +57,7 @@ class gpu_resource {
   gpu_resource(const gpu_resource &) = delete;
 
   auto operator=(const gpu_resource &) = delete;
+  auto operator=(gpu_resource &&) = delete;
 
   uint16_t *device_mat_age{nullptr};
   std::complex<double> *device_mat_z{nullptr};
@@ -64,6 +65,7 @@ class gpu_resource {
 
  public:
   gpu_resource(size_t rows, size_t cols);
+  gpu_resource(gpu_resource &&another);
   ~gpu_resource();
 
   inline size_t rows() const noexcept { return this->m_rows; }

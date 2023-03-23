@@ -1,6 +1,7 @@
 #include <fmt/format.h>
 #include <fractal_colors.h>
 #include <libHybfile.h>
+#include <libRender.h>
 #include <omp.h>
 #include <render_utils.h>
 #include <zoom_utils.h>
@@ -21,11 +22,12 @@ struct metainfo4gui_s {
   libHybractal::hybf_metainfo info;
   fractal_utils::fractal_map mat_z{0, 0, 16};
 
-  fractal_utils::fractal_map mat_f32;
-  float num_peroid{4};
+  libHybractal::gpu_resource gpu_rcs;
+  libHybractal::hsv_render_option renderer;
 };
 
-metainfo4gui_s get_info_struct(std::string_view filename) noexcept;
+metainfo4gui_s get_info_struct(std::string_view filename,
+                               std::string_view json) noexcept;
 
 int main(int argc, char **argv) {
   omp_set_num_threads(20);
@@ -36,10 +38,14 @@ int main(int argc, char **argv) {
   capp.add_option("hybf_file", source_file)
       ->check(CLI::ExistingFile)
       ->required();
+  std::string render_json{""};
+  capp.add_option("--render-json,--rj", render_json)
+      ->check(CLI::ExistingFile)
+      ->required();
 
   CLI11_PARSE(capp, argc, argv);
 
-  metainfo4gui_s metainfo = get_info_struct(source_file);
+  metainfo4gui_s metainfo = get_info_struct(source_file, render_json);
 
   QApplication qapp(argc, argv);
 
@@ -62,7 +68,8 @@ int main(int argc, char **argv) {
   return qapp.exec();
 }
 
-metainfo4gui_s get_info_struct(std::string_view filename) noexcept {
+metainfo4gui_s get_info_struct(std::string_view filename,
+                               std::string_view json) noexcept {
   std::string err;
   auto archive = libHybractal::hybf_archive::load(filename, &err);
 
@@ -71,14 +78,18 @@ metainfo4gui_s get_info_struct(std::string_view filename) noexcept {
     exit(1);
   }
 
-  fractal_utils::fractal_map map_f32{archive.rows(), archive.cols(),
-                                     sizeof(float)};
+  auto renderer = libHybractal::hsv_render_option::load_from_file(json);
+  if (!renderer.has_value()) {
+    std::cerr << "Failed to parse renderer." << std::endl;
+    exit(1);
+  }
 
   return metainfo4gui_s{
       archive.metainfo(),
       fractal_utils::fractal_map{archive.rows(), archive.cols(),
                                  sizeof(std::complex<double>)},
-      std::move(map_f32)};
+      libHybractal::gpu_resource{archive.rows(), archive.cols()},
+      renderer.value()};
 }
 
 void compute_fun(const fractal_utils::wind_base &__wind, void *custom_ptr,
@@ -104,31 +115,11 @@ void render_fun(const fractal_utils::fractal_map &map_fractal,
                 fractal_utils::fractal_map *map_u8c3) {
   auto *metainfo = reinterpret_cast<metainfo4gui_s *>(custom_ptr);
 
-  for (size_t i = 0; i < map_fractal.element_count(); i++) {
-    const float range = metainfo->info.maxit;
-    const uint16_t current_age = map_fractal.at<uint16_t>(i);
-
-    if (current_age <= libHybractal::maxit_max) {
-      metainfo->mat_f32.at<float>(i) =
-          std::clamp<double>(std::sin((current_age / range + M_PI) *
-                                      metainfo->num_peroid * 2 * M_PI) /
-                                     2 +
-                                 0.5,
-                             0.0, 1.0);
-    } else {
-      metainfo->mat_f32.at<float>(i) = 0.0f;
-    }
+  if (!metainfo->gpu_rcs.ok()) {
+    std::cout << "Failed to acqurire gpu resource. exit." << std::endl;
+    exit(1);
   }
 
-  for (size_t i = 0; i < map_fractal.element_count(); i++) {
-    const uint16_t current_age = map_fractal.at<uint16_t>(i);
-
-    if (current_age <= libHybractal::maxit_max) {
-      map_u8c3->at<fractal_utils::pixel_RGB>(i) = fractal_utils::color_u8c3(
-          metainfo->mat_f32.at<float>(i), fractal_utils::color_series::jet);
-    } else {
-      map_u8c3->at<fractal_utils::pixel_RGB>(i) = fractal_utils::color_u8c3(
-          metainfo->mat_f32.at<float>(i), fractal_utils::color_series::bone);
-    }
-  }
+  libHybractal::render_hsv(map_fractal, metainfo->mat_z, *map_u8c3,
+                           metainfo->renderer, metainfo->gpu_rcs);
 }

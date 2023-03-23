@@ -8,6 +8,8 @@ find_package(Qt6 COMPONENTS Widgets REQUIRED)
 
 find_package(fractal_utils COMPONENTS core_utils zoom_utils render_utils png_utils REQUIRED)
 
+enable_language(CUDA)
+
 add_executable(zoomer zoomer.cpp)
 
 target_include_directories(zoomer PRIVATE ${CLI11_include_dir})

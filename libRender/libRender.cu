@@ -26,6 +26,19 @@ libHybractal::gpu_resource::gpu_resource(size_t _rows, size_t _cols)
   PRIVATE_HANDLE_ERROR_GPU_RCS(err_code);
 }
 
+libHybractal::gpu_resource::gpu_resource(gpu_resource &&another) {
+  this->m_rows = another.m_rows;
+  this->m_cols = another.m_cols;
+
+  this->device_mat_age = another.device_mat_age;
+  this->device_mat_u8c3 = another.device_mat_u8c3;
+  this->device_mat_z = another.device_mat_z;
+
+  another.device_mat_age = nullptr;
+  another.device_mat_u8c3 = nullptr;
+  another.device_mat_z = nullptr;
+}
+
 libHybractal::gpu_resource::~gpu_resource() {
   if (device_mat_age != nullptr) {
     cudaFree(device_mat_age);
