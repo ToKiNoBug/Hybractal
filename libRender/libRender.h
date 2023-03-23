@@ -1,3 +1,21 @@
+/*
+ Copyright © 2023  TokiNoBug
+This file is part of Hybractal.
+
+    Hybractal is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Hybractal is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Hybractal.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
 #ifndef HYBRACTAL_LIBRENDER_LIBRENDER_H
 #define HYBRACTAL_LIBRENDER_LIBRENDER_H
 
@@ -12,7 +30,7 @@
 #else
 
 #define HYBRACTAL_HOST_DEVICE_FUN
-#endif  //--expt-relaxed-constexpr
+#endif //--expt-relaxed-constexpr
 
 namespace libHybractal {
 
@@ -29,8 +47,8 @@ struct hsv_render_option {
     float age_peroid;
     std::array<frac_val, 3> fv_mapping;
 
-    inline std::array<float, 3> map_value(
-        const std::array<float, 3> &src) const noexcept {
+    inline std::array<float, 3>
+    map_value(const std::array<float, 3> &src) const noexcept {
       std::array<float, 3> hsv;
 
       hsv[0] = (range_H[1] - range_H[0]) * src[fv_mapping[0]] + range_H[0];
@@ -45,12 +63,12 @@ struct hsv_render_option {
 
   static std::optional<hsv_render_option> load(const char *beg,
                                                const char *end) noexcept;
-  static std::optional<hsv_render_option> load_from_file(
-      std::string_view filename) noexcept;
+  static std::optional<hsv_render_option>
+  load_from_file(std::string_view filename) noexcept;
 };
 
 class gpu_resource {
- private:
+private:
   size_t m_rows;
   size_t m_cols;
 
@@ -63,7 +81,7 @@ class gpu_resource {
   std::complex<double> *device_mat_z{nullptr};
   fractal_utils::pixel_RGB *device_mat_u8c3{nullptr};
 
- public:
+public:
   gpu_resource(size_t rows, size_t cols);
   gpu_resource(gpu_resource &&another);
   ~gpu_resource();
@@ -90,6 +108,6 @@ void render_hsv(const fractal_utils::fractal_map &mat_age,
                 fractal_utils::fractal_map &mat_u8c3,
                 const hsv_render_option &opt, gpu_resource &rcs) noexcept;
 
-}  // namespace libHybractal
+} // namespace libHybractal
 
-#endif  // HYBRACTAL_LIBRENDER_LIBRENDER_H
+#endif // HYBRACTAL_LIBRENDER_LIBRENDER_H

@@ -1,3 +1,21 @@
+/*
+ Copyright © 2023  TokiNoBug
+This file is part of Hybractal.
+
+    Hybractal is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Hybractal is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Hybractal.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
 #include <fmt/format.h>
 
 #include <fstream>
@@ -9,11 +27,11 @@ using std::cout, std::endl;
 
 using njson = nlohmann::json;
 
-libHybractal::hsv_render_option::hsv_range parse_range(
-    const njson &jo) noexcept(false);
+libHybractal::hsv_render_option::hsv_range
+parse_range(const njson &jo) noexcept(false);
 
-std::optional<libHybractal::hsv_render_option> parse_option(
-    const njson &jo) noexcept;
+std::optional<libHybractal::hsv_render_option>
+parse_option(const njson &jo) noexcept;
 
 std::optional<libHybractal::hsv_render_option>
 libHybractal::hsv_render_option::load(const char *beg,
@@ -44,8 +62,8 @@ libHybractal::hsv_render_option::load_from_file(
   return parse_option(jo);
 }
 
-std::array<float, 2> parse_single_range(const njson &range_val) noexcept(
-    false) {
+std::array<float, 2>
+parse_single_range(const njson &range_val) noexcept(false) {
   if (range_val.is_array()) {
     return {range_val[0], range_val[1]};
   }
@@ -67,8 +85,8 @@ libHybractal::frac_val string_to_frac_val(std::string_view sv) noexcept(false) {
   return {};
 }
 
-libHybractal::hsv_render_option::hsv_range parse_range(
-    const njson &jo) noexcept(false) {
+libHybractal::hsv_render_option::hsv_range
+parse_range(const njson &jo) noexcept(false) {
   libHybractal::hsv_render_option::hsv_range range;
 
   range.range_H = parse_single_range(jo.at("range_H"));
@@ -86,8 +104,8 @@ libHybractal::hsv_render_option::hsv_range parse_range(
   return range;
 }
 
-std::optional<libHybractal::hsv_render_option> parse_option(
-    const njson &jo) noexcept {
+std::optional<libHybractal::hsv_render_option>
+parse_option(const njson &jo) noexcept {
   libHybractal::hsv_render_option ret;
   try {
     ret.range_age_inf = parse_range(jo.at("range_age_inf"));
