@@ -22,7 +22,7 @@ unset(compiler_path)
 
 add_subdirectory(libHybractal)
 add_subdirectory(libRender)
-add_subdirectory(hybractal)
+add_subdirectory(hybtool)
 add_subdirectory(zoomer)
 
 set(CPACK_PROJECT_NAME ${PROJECT_NAME})
