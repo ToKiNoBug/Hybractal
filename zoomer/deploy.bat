@@ -1,0 +1,1 @@
+@HYBRACTAL_QT_WINDEPLOYQT_EXE@ zoomer.exe

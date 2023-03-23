@@ -42,11 +42,11 @@ int main(int argc, char **argv) {
   std::string source_file{""};
   capp.add_option("hybf_file", source_file)
       ->check(CLI::ExistingFile)
-      ->required();
+      ->default_val("default.hybf");
   std::string render_json{""};
   capp.add_option("--render-json,--rj", render_json)
       ->check(CLI::ExistingFile)
-      ->required();
+      ->default_val("render1.json");
 
   CLI11_PARSE(capp, argc, argv);
 
@@ -112,7 +112,8 @@ void compute_fun(const fractal_utils::wind_base &__wind, void *custom_ptr,
   }
 
   auto *metainfo = reinterpret_cast<metainfo4gui_s *>(custom_ptr);
-  if (false) std::cout << "maxit = " << metainfo->info.maxit << std::endl;
+  if (false)
+    std::cout << "maxit = " << metainfo->info.maxit << std::endl;
 
   libHybractal::compute_frame(wind, metainfo->info.maxit, *map_fractal,
                               &metainfo->mat_z);
