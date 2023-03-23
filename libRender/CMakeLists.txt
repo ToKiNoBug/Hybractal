@@ -29,3 +29,6 @@ target_include_directories(Render INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(
   Render PUBLIC Hybractal fractal_utils::core_utils fractal_utils::render_utils
                 fractal_utils::png_utils fmt::fmt)
+
+add_executable(test_load_option test_load_option.cpp)
+target_link_libraries(test_load_option PRIVATE Render fmt::fmt)

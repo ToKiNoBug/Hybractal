@@ -63,7 +63,7 @@ libHybractal::frac_val string_to_frac_val(std::string_view sv) noexcept(false) {
   if (sv == "angle") {
     return libHybractal::fv_angle;
   }
-  throw std::runtime_error(fmt::format("Invalid frac_val : {}", sv));
+  throw std::runtime_error(fmt::format("Invalid frac_val : \"{}\"", sv));
   return {};
 }
 
@@ -75,7 +75,7 @@ libHybractal::hsv_render_option::hsv_range parse_range(
   range.range_S = parse_single_range(jo.at("range_S"));
   range.range_V = parse_single_range(jo.at("range_V"));
 
-  range.age_peroid = jo.at("age_preoid");
+  range.age_peroid = jo.at("age_peroid");
 
   for (size_t i = 0; i < 3; i++) {
     const std::string &str = jo.at("fv_mapping")[i];
