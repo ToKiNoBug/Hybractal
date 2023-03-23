@@ -1,38 +1,25 @@
 {
     "range_age_normal": {
-        "range_H": [
-            0,
-            120
-        ],
-        "range_S": [
-            0.5,
-            0.75
-        ],
-        "range_V": [
-            0.75,
-            1
-        ],
-        "age_peroid": 100,
+        "range_H":[120,240] ,
+        "range_S": [0.8,0.5],
+        "range_V": [0.1,0.9],
+        "age_peroid": 80,
         "fv_mapping": [
+            "age",
             "angle",
-            "norm2",
             "age"
         ]
     },
     "range_age_inf": {
-        "range_H": [
-            180,
-            300
-        ],
-        "range_S": 0.3,
+        "range_H":[310,280],
+        "range_S": [0.4,0.6],
         "range_V": [
-            0,
-            0.25
+            0.35,1
         ],
         "age_peroid": 100,
         "fv_mapping": [
             "angle",
-            "age",
+            "angle",
             "norm2"
         ]
     }
