@@ -35,51 +35,70 @@ int main(int argc, char **argv) {
   CLI::App app;
 
   //////////////////////////////////////
-  CLI::App *const compute = app.add_subcommand("compute");
+  CLI::App *const compute = app.add_subcommand(
+      "compute", "Compute a fractal and generate a .hybf file.");
 
   task_compute task_c;
-  compute->add_option("--rows,-r", task_c.info.rows)
+  compute->add_option("--rows,-r", task_c.info.rows, "Rows")
       ->required()
       ->check(CLI::PositiveNumber);
-  compute->add_option("--cols,-c", task_c.info.cols)
+  compute->add_option("--cols,-c", task_c.info.cols, "Cols")
       ->required()
       ->check(CLI::PositiveNumber);
-  compute->add_option("--maxit", task_c.info.maxit)
+  compute->add_option("--maxit", task_c.info.maxit, "Max iteration")
       ->default_val(1024)
       ->check(CLI::Range(uint16_t(1), libHybractal::maxit_max));
 
   std::string center_hex;
 
   CLI::Option *const opt_center_double =
-      compute->add_option("--center", task_c.info.window_center)
+      compute
+          ->add_option("--center", task_c.info.window_center,
+                       "Coordinate of center")
           ->expected(0, 1);
   CLI::Option *const opt_center_hex =
-      compute->add_option("--center-hex,--chx", center_hex)->expected(0, 1);
+      compute
+          ->add_option("--center-hex,--chx", center_hex,
+                       "Coordiante of center, but encoded in byte sequence.")
+          ->expected(0, 1);
 
-  compute->add_option("--x-span,--span-x", task_c.info.window_xy_span[0])
+  compute
+      ->add_option("--x-span,--span-x", task_c.info.window_xy_span[0],
+                   "Range of x. Non-positive number means default value.")
       ->default_val(-1);
-  compute->add_option("--y-span,--span-y", task_c.info.window_xy_span[1])
+  compute
+      ->add_option("--y-span,--span-y", task_c.info.window_xy_span[1],
+                   "Range of y.")
       ->default_val(2);
-  compute->add_option("-o", task_c.filename)->default_val("out.hybf");
-  compute->add_option("--threads,-j", task_c.threads)
+  compute->add_option("-o", task_c.filename, "Generated hybf file.")
+      ->default_val("out.hybf");
+  compute
+      ->add_option("--threads,-j", task_c.threads, "Threads used to compute.")
       ->default_val(std::thread::hardware_concurrency())
       ->check(CLI::PositiveNumber);
-  compute->add_flag("--mat-z", task_c.save_mat_z)->default_val(false);
+  compute->add_flag("--mat-z", task_c.save_mat_z, "Whether to save z matrix.")
+      ->default_val(false);
 
   //////////////////////////////////////
 
-  CLI::App *const render = app.add_subcommand("render");
+  CLI::App *const render =
+      app.add_subcommand("render", "Render a png image from a .hybf file.");
   task_render task_r;
 
-  render->add_option("--json", task_r.json_file)
+  render
+      ->add_option("--json,--render-json,--rj", task_r.json_file,
+                   "Renderer config json file.")
       ->check(CLI::ExistingFile)
       ->required();
 
-  render->add_option("source_file", task_r.hybf_file)
+  render
+      ->add_option("source_file", task_r.hybf_file,
+                   ".hybf file used to render.")
       ->check(CLI::ExistingFile)
       ->required();
 
-  render->add_option("-o", task_r.png_file)->default_val("out.png");
+  render->add_option("-o", task_r.png_file, "Generated png file.")
+      ->default_val("out.png");
 
   CLI11_PARSE(app, argc, argv);
 

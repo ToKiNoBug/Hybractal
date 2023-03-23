@@ -40,11 +40,11 @@ int main(int argc, char **argv) {
   CLI::App capp;
 
   std::string source_file{""};
-  capp.add_option("hybf_file", source_file)
+  capp.add_option("hybf_file", source_file, "Source file for metainfo.")
       ->check(CLI::ExistingFile)
       ->default_val("default.hybf");
   std::string render_json{""};
-  capp.add_option("--render-json,--rj", render_json)
+  capp.add_option("--render-json,--rj", render_json, "Render config file.")
       ->check(CLI::ExistingFile)
       ->default_val("render1.json");
 
