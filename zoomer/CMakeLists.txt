@@ -16,4 +16,4 @@ target_link_libraries(zoomer PRIVATE
     Qt6::Widgets
     Hybfile
     fractal_utils::zoom_utils
-    fractal_utils::render_utils)
+    fractal_utils::render_utils Render)

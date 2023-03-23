@@ -1,6 +1,9 @@
-#include "libHybfile.h"
 #include <fmt/format.h>
+
 #include <iostream>
+
+#include "libHybfile.h"
+
 
 libHybractal::hybf_archive::hybf_archive(size_t rows, size_t cols,
                                          bool have_z) {
@@ -36,7 +39,6 @@ void libHybractal::compress(const void *src, size_t bytes,
 
 void libHybractal::decompress(const void *src, size_t src_bytes,
                               std::vector<uint8_t> &dest) noexcept {
-
   const size_t dst_bytes = ZSTD_getDecompressedSize(src, src_bytes);
   dest.resize(dst_bytes);
   const size_t capacity = dest.size();
@@ -63,10 +65,12 @@ std::vector<uint8_t> libHybractal::compress(const void *src,
 }
 
 #include <fractal_binfile.h>
+
 #include <fstream>
 #include <iostream>
 #include <struct_pack/struct_pack.hpp>
 #include <vector>
+
 
 enum seg_id : int64_t {
   id_metainfo = 666,
@@ -74,10 +78,9 @@ enum seg_id : int64_t {
   id_mat_z = 1919810,
 };
 
-libHybractal::hybf_archive
-libHybractal::hybf_archive::load(std::string_view filename,
-                                 std::vector<uint8_t> &buffer,
-                                 std::string *err) noexcept {
+libHybractal::hybf_archive libHybractal::hybf_archive::load(
+    std::string_view filename, std::vector<uint8_t> &buffer,
+    std::string *err) noexcept {
   fractal_utils::binfile bfile;
 
   if (!bfile.parse_from_file(filename.data())) {
@@ -136,7 +139,7 @@ libHybractal::hybf_archive::load(std::string_view filename,
             rows * cols * sizeof(std::complex<double>), buffer.size()));
         return {};
       }
-      result.data_z.resize(buffer.size());
+      result.data_z.resize(rows * cols);
       memcpy(result.data_z.data(), buffer.data(), buffer.size());
     }
   }

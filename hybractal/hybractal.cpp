@@ -1,8 +1,10 @@
-#include <CLI11.hpp>
+#include <fmt/format.h>
 #include <hex_convert.h>
 #include <libHybfile.h>
 #include <libHybractal.h>
 #include <omp.h>
+
+#include <CLI11.hpp>
 #include <thread>
 #include <variant>
 
@@ -19,12 +21,22 @@ struct task_compute {
   void override_center(const std::array<uint64_t, 2> &src) noexcept;
 };
 
+struct task_render {
+  std::string json_file;
+  std::string png_file;
+  std::string hybf_file;
+};
+
 bool run_compute(const task_compute &task) noexcept;
+
+bool run_render(const task_render &task) noexcept;
 
 int main(int argc, char **argv) {
   CLI::App app;
 
+  //////////////////////////////////////
   CLI::App *const compute = app.add_subcommand("compute");
+
   task_compute task_c;
   compute->add_option("--rows,-r", task_c.info.rows)
       ->required()
@@ -54,6 +66,21 @@ int main(int argc, char **argv) {
       ->check(CLI::PositiveNumber);
   compute->add_flag("--mat-z", task_c.save_mat_z)->default_val(false);
 
+  //////////////////////////////////////
+
+  CLI::App *const render = app.add_subcommand("render");
+  task_render task_r;
+
+  render->add_option("--json", task_r.json_file)
+      ->check(CLI::ExistingFile)
+      ->required();
+
+  render->add_option("source_file", task_r.hybf_file)
+      ->check(CLI::ExistingFile)
+      ->required();
+
+  render->add_option("-o", task_r.png_file)->default_val("out.png");
+
   CLI11_PARSE(app, argc, argv);
 
   if (compute->count() > 0) {
@@ -76,7 +103,6 @@ int main(int argc, char **argv) {
         return 1;
       }
     } else {
-
       if (opt_center_double->count() <= 0) {
         std::cerr << "No value for center" << std::endl;
         return 1;
@@ -85,6 +111,13 @@ int main(int argc, char **argv) {
 
     if (!run_compute(task_c)) {
       std::cerr << "run_compute failed." << std::endl;
+      return 1;
+    }
+  }
+
+  if (render->count() > 0) {
+    if (!run_render(task_r)) {
+      std::cout << "Failed to render." << std::endl;
       return 1;
     }
   }
@@ -107,4 +140,58 @@ bool run_compute(const task_compute &task) noexcept {
                               mat_age, file.have_mat_z() ? &mat_z : nullptr);
 
   return file.save(task.filename);
+}
+
+#include <png_utils.h>
+
+#include "libRender.h"
+
+bool run_render(const task_render &task) noexcept {
+  std::string err{""};
+  std::vector<uint8_t> buffer;
+  auto src = libHybractal::hybf_archive::load(task.hybf_file, buffer, &err);
+
+  if (!err.empty()) {
+    std::cout << "Failed to load source file, detail: " << err << std::endl;
+    return false;
+  }
+
+  if (!src.have_mat_z()) {
+    std::cout << "Source file doesn\'t contains mat-z.\n";
+    std::cout << fmt::format("rows = {}, cols = {}, size of vector = {}",
+                             src.rows(), src.cols(), src.mat_z_data().size())
+              << std::endl;
+    ;
+    return false;
+  }
+
+  auto render_opt =
+      libHybractal::hsv_render_option::load_from_file(task.json_file);
+
+  if (!render_opt.has_value()) {
+    std::cout << "Failed to load render option file" << std::endl;
+    return false;
+  }
+
+  libHybractal::gpu_resource gpu_rcs(src.rows(), src.cols());
+
+  if (!gpu_rcs.ok()) {
+    std::cout << "Failed to initialize gpu resource." << std::endl;
+    return false;
+  }
+
+  fractal_utils::fractal_map img_u8c3(src.rows(), src.cols(), 3);
+
+  libHybractal::render_hsv(src.map_age(), src.map_z(), img_u8c3,
+                           render_opt.value(), gpu_rcs);
+
+  const bool ok = fractal_utils::write_png(
+      task.png_file.c_str(), fractal_utils::color_space::u8c3, img_u8c3);
+
+  if (!ok) {
+    std::cout << "Failed to export png" << std::endl;
+    return false;
+  }
+
+  return true;
 }

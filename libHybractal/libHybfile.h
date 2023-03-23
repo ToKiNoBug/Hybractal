@@ -1,13 +1,13 @@
 #ifndef HYBRACTAL_LIBHYBFILE_H
 #define HYBRACTAL_LIBHYBFILE_H
 
-#include "libHybractal.h"
 #include <optional>
+
+#include "libHybractal.h"
 
 namespace libHybractal {
 
 struct hybf_metainfo {
-
   uint64_t sequence_bin{::libHybractal::convert_to_bin(HYBRACTAL_SEQUENCE_STR)};
   uint64_t sequence_len{::libHybractal::static_strlen(HYBRACTAL_SEQUENCE_STR)};
 
@@ -30,12 +30,12 @@ struct hybf_metainfo {
 };
 
 class hybf_archive {
-private:
+ private:
   hybf_metainfo m_info;
   std::vector<uint16_t> data_age;
   std::vector<std::complex<double>> data_z;
 
-public:
+ public:
   hybf_archive() : hybf_archive(0, 0, false) {}
   explicit hybf_archive(size_t rows, size_t cols, bool have_z);
   auto &metainfo() noexcept { return this->m_info; }
@@ -44,6 +44,10 @@ public:
   inline size_t rows() const noexcept { return this->m_info.rows; }
 
   inline size_t cols() const noexcept { return this->m_info.cols; }
+
+  inline auto &mat_z_data() const noexcept { return this->data_z; }
+
+  inline auto &mat_age_data() const noexcept { return this->data_age; }
 
   inline bool have_mat_z() const noexcept {
     return this->data_z.size() == (this->rows() * this->cols());
@@ -85,6 +89,6 @@ std::vector<uint8_t> compress(const void *src, size_t bytes) noexcept;
 void decompress(const void *src, size_t src_bytes,
                 std::vector<uint8_t> &dest) noexcept;
 
-} // namespace libHybractal
+}  // namespace libHybractal
 
-#endif // HYBRACTAL_LIBHYBFILE_H
+#endif  // HYBRACTAL_LIBHYBFILE_H

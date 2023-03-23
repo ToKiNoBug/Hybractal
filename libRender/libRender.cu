@@ -5,13 +5,25 @@
 #include <cmath>
 #include <cuComplex.h>
 #include <cuda.h>
+#include <iostream>
+
+#define PRIVATE_HANDLE_ERROR_GPU_RCS(err_code)                                 \
+  if (err_code) {                                                              \
+    std::cout << "cudaMalloc failed. err_code = " << err_code << std::endl;    \
+  }
 
 libHybractal::gpu_resource::gpu_resource(size_t _rows, size_t _cols)
     : m_rows(_rows), m_cols(_cols) {
-
-  cudaMalloc(&this->device_mat_age, _rows * _cols);
-  cudaMalloc(&this->device_mat_z, _rows * _cols);
-  cudaMalloc(&this->device_mat_u8c3, _rows * _cols);
+  cudaError_t err_code;
+  err_code =
+      cudaMalloc(&this->device_mat_age, _rows * _cols * sizeof(uint16_t));
+  PRIVATE_HANDLE_ERROR_GPU_RCS(err_code);
+  err_code = cudaMalloc(&this->device_mat_z,
+                        _rows * _cols * sizeof(std::complex<double>));
+  PRIVATE_HANDLE_ERROR_GPU_RCS(err_code);
+  err_code =
+      cudaMalloc(&this->device_mat_u8c3, _rows * _cols * sizeof(uint8_t[3]));
+  PRIVATE_HANDLE_ERROR_GPU_RCS(err_code);
 }
 
 libHybractal::gpu_resource::~gpu_resource() {

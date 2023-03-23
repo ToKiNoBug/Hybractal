@@ -78,8 +78,8 @@ class gpu_resource {
   }
 
   inline bool ok() const noexcept {
-    return (device_mat_age == nullptr) || (device_mat_z == nullptr) ||
-           (device_mat_u8c3 == nullptr);
+    return (device_mat_age != nullptr) &&
+           (device_mat_z != nullptr) & (device_mat_u8c3 != nullptr);
   }
 };
 
