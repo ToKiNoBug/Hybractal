@@ -18,6 +18,11 @@ void render_fun(const fractal_utils::fractal_map &map_fractal,
                 const fractal_utils::wind_base &window, void *custom_ptr,
                 fractal_utils::fractal_map *map_u8c3_do_not_resize);
 
+bool export_fun(const fractal_utils::fractal_map &map_fractal,
+                const fractal_utils::wind_base &window, void *custom_ptr,
+                const fractal_utils::fractal_map &map_u8c3_do_not_resize,
+                const char *filename);
+
 struct metainfo4gui_s {
   libHybractal::hybf_metainfo info;
   fractal_utils::fractal_map mat_z{0, 0, 16};
@@ -59,6 +64,9 @@ int main(int argc, char **argv) {
 
   window.callback_compute_fun = compute_fun;
   window.callback_render_fun = render_fun;
+  window.callback_export_fun = export_fun;
+
+  window.frame_file_extension_list = "*.hybf";
 
   window.custom_parameters = &metainfo;
 
@@ -122,4 +130,28 @@ void render_fun(const fractal_utils::fractal_map &map_fractal,
 
   libHybractal::render_hsv(map_fractal, metainfo->mat_z, *map_u8c3,
                            metainfo->renderer, metainfo->gpu_rcs);
+}
+
+bool export_fun(const fractal_utils::fractal_map &map_fractal,
+                const fractal_utils::wind_base &window, void *custom_ptr,
+                const fractal_utils::fractal_map &map_u8c3_do_not_resize,
+                const char *filename) {
+  auto *metainfo = reinterpret_cast<metainfo4gui_s *>(custom_ptr);
+
+  libHybractal::hybf_archive archive{metainfo->info.rows, metainfo->info.cols,
+                                     true};
+  {
+    const auto seq_ar = archive.metainfo().sequence_bin;
+    const auto seq_len = archive.metainfo().sequence_len;
+    archive.metainfo() = metainfo->info;
+
+    archive.metainfo().sequence_bin = seq_ar;
+    archive.metainfo().sequence_len = seq_len;
+  }
+
+  memcpy(archive.map_age().data, map_fractal.data, map_fractal.byte_count());
+  memcpy(archive.map_z().data, metainfo->mat_z.data,
+         metainfo->mat_z.byte_count());
+
+  return archive.save(filename);
 }
