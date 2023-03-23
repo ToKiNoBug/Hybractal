@@ -19,7 +19,7 @@ void libHybractal::compute_frame(
   const std::complex<double> left_top{wind_C.left_top_corner()[0],
                                       wind_C.left_top_corner()[1]};
   const double r_unit = -wind_C.y_span / map_age_u16.rows;
-  const double c_unit = -wind_C.x_span / map_age_u16.cols;
+  const double c_unit = wind_C.x_span / map_age_u16.cols;
 
 #pragma omp parallel for schedule(dynamic)
   for (size_t r = 0; r < map_age_u16.rows; r++) {

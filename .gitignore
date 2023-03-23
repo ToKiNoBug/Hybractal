@@ -36,3 +36,4 @@ compile_commands.json
 .cache/*
 3rdParty/*
 .vscode/launch.json
+zoomer/zoomer.cpp

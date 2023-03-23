@@ -1,13 +1,14 @@
-#include <CLI11.hpp>
-#include <QApplication>
-#include <QMainWindow>
 #include <fmt/format.h>
 #include <fractal_colors.h>
-#include <iostream>
 #include <libHybfile.h>
 #include <omp.h>
 #include <render_utils.h>
 #include <zoom_utils.h>
+
+#include <CLI11.hpp>
+#include <QApplication>
+#include <QMainWindow>
+#include <iostream>
 
 void compute_fun(const fractal_utils::wind_base &, void *custom_ptr,
                  fractal_utils::fractal_map *map_fractal);
@@ -18,7 +19,6 @@ void render_fun(const fractal_utils::fractal_map &map_fractal,
 
 struct metainfo4gui_s {
   libHybractal::hybf_metainfo info;
-  const bool have_mat_z;
   fractal_utils::fractal_map mat_z{0, 0, 16};
 
   fractal_utils::fractal_map mat_f32;
@@ -28,7 +28,6 @@ struct metainfo4gui_s {
 metainfo4gui_s get_info_struct(std::string_view filename) noexcept;
 
 int main(int argc, char **argv) {
-
   omp_set_num_threads(20);
 
   CLI::App capp;
@@ -64,7 +63,6 @@ int main(int argc, char **argv) {
 }
 
 metainfo4gui_s get_info_struct(std::string_view filename) noexcept {
-
   std::string err;
   auto archive = libHybractal::hybf_archive::load(filename, &err);
 
@@ -76,16 +74,10 @@ metainfo4gui_s get_info_struct(std::string_view filename) noexcept {
   fractal_utils::fractal_map map_f32{archive.rows(), archive.cols(),
                                      sizeof(float)};
 
-  if (archive.have_mat_z()) {
-    return metainfo4gui_s{
-        archive.metainfo(), true,
-        fractal_utils::fractal_map{archive.rows(), archive.cols(),
-                                   sizeof(std::complex<double>)},
-        std::move(map_f32)};
-  }
   return metainfo4gui_s{
-      archive.metainfo(), false,
-      fractal_utils::fractal_map{0, 0, sizeof(std::complex<double>)},
+      archive.metainfo(),
+      fractal_utils::fractal_map{archive.rows(), archive.cols(),
+                                 sizeof(std::complex<double>)},
       std::move(map_f32)};
 }
 
@@ -101,18 +93,15 @@ void compute_fun(const fractal_utils::wind_base &__wind, void *custom_ptr,
   }
 
   auto *metainfo = reinterpret_cast<metainfo4gui_s *>(custom_ptr);
-  if (false)
-    std::cout << "maxit = " << metainfo->info.maxit << std::endl;
+  if (false) std::cout << "maxit = " << metainfo->info.maxit << std::endl;
 
   libHybractal::compute_frame(wind, metainfo->info.maxit, *map_fractal,
-                              metainfo->have_mat_z ? &metainfo->mat_z
-                                                   : nullptr);
+                              &metainfo->mat_z);
 }
 
 void render_fun(const fractal_utils::fractal_map &map_fractal,
                 const fractal_utils::wind_base &, void *custom_ptr,
                 fractal_utils::fractal_map *map_u8c3) {
-
   auto *metainfo = reinterpret_cast<metainfo4gui_s *>(custom_ptr);
 
   for (size_t i = 0; i < map_fractal.element_count(); i++) {
