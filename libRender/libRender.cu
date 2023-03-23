@@ -9,7 +9,7 @@
 
 #define PRIVATE_HANDLE_ERROR_GPU_RCS(err_code)                                 \
   if (err_code) {                                                              \
-    std::cout << "cudaMalloc failed. err_code = " << err_code << std::endl;    \
+    std::cerr << "cudaMalloc failed. err_code = " << err_code << std::endl;    \
   }
 
 libHybractal::gpu_resource::gpu_resource(size_t _rows, size_t _cols)
@@ -46,7 +46,7 @@ __device__ uchar3 hsv2rgb(const float3 HSV) noexcept {
 
   const int H_i = H;
 
-  const int H_mod_60 = H_i % 60;
+  const int H_mod_60 = H_i / 60;
 
   const float X = C * (1 - std::abs((H_i / 60) % 2 - 1));
   const float m = V - C;
@@ -99,7 +99,10 @@ __device__ cplx cplx_cvt_normalize(cuFloatComplex z) {
 }
 
 __device__ float normalize_age_cos(uint16_t age, const float peroid) {
-  return -0.5f * (std::cos(peroid / (2 * M_PI) * age) - 1);
+
+  const float omega = 2 * M_PI / peroid;
+
+  return 0.5f * (1 - std::cos(omega * age));
 }
 
 __device__ float get_float3_value(float3 val, int idx) {
@@ -153,8 +156,10 @@ __global__ void render_custom(const uint16_t *age_ptr,
 }
 
 #define handle_error(err)                                                      \
-  if (err)                                                                     \
-    abort();
+  if (err) {                                                                   \
+    std::cerr << "cuda error : " << err << std::endl;                          \
+    abort();                                                                   \
+  }
 
 __host__ void
 libHybractal::render_hsv(const fractal_utils::fractal_map &mat_age,
@@ -188,12 +193,19 @@ libHybractal::render_hsv(const fractal_utils::fractal_map &mat_age,
   static_assert(sizeof(cuDoubleComplex) == sizeof(std::complex<double>), "");
   static_assert(sizeof(uchar3) == sizeof(fractal_utils::pixel_RGB), "");
 
-  render_custom<<<mat_age.element_count(), 128>>>(
+  const int blockdim = 64;
+
+  render_custom<<<mat_age.element_count() / blockdim, blockdim>>>(
       rcs.mat_age_gpu(), (const cuDoubleComplex *)rcs.mat_z_gpu(),
       (uchar3 *)rcs.mat_u8c3_gpu(), opt);
 
   err = cudaMemcpy(mat_u8c3.data, rcs.mat_u8c3_gpu(), mat_u8c3.byte_count(),
                    cudaMemcpyKind::cudaMemcpyDeviceToHost);
+  if (err) {
+    std::cerr << "mat_u8c3.data = " << mat_u8c3.data
+              << ", rcs.mat_u8c3_gpu() = " << rcs.mat_u8c3_gpu() << std::endl;
+  }
+
   handle_error(err);
 }
 
