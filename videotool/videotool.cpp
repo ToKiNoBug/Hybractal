@@ -7,6 +7,7 @@ int main(int argc, char **argv) {
   CLI::App app;
   std::string taskfile;
   app.add_option("taskfile", taskfile, "Json task file")
+      ->required()
       ->check(CLI::ExistingFile)
       ->check(CLI::Validator{[](std::string &str) -> std::string {
                                if (str.ends_with(".json")) {
@@ -34,6 +35,13 @@ int main(int argc, char **argv) {
   if (taskv.compute.x_span <= 0) {
     taskv.compute.x_span =
         taskv.compute.y_span * taskv.common.rows / taskv.common.cols;
+  }
+
+  if (compute->count() > 0) {
+    if (!run_compute(taskv.common, taskv.compute)) {
+      std::cout << "Computation terminated with error." << std::endl;
+      return 1;
+    }
   }
 
   return 0;

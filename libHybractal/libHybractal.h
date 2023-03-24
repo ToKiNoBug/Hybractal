@@ -14,15 +14,17 @@ namespace libHybractal {
 static constexpr uint16_t maxit_max = UINT16_MAX - 1;
 
 template <typename float_t>
-inline std::complex<float_t> iterate_mandelbrot(
-    std::complex<float_t> z, const std::complex<float_t> &C) noexcept {
+inline std::complex<float_t>
+iterate_mandelbrot(std::complex<float_t> z,
+                   const std::complex<float_t> &C) noexcept {
   static_assert(std::is_arithmetic_v<float_t>);
   return z * z + C;
 }
 
 template <typename float_t>
-inline std::complex<float_t> iterate_burningship(
-    std::complex<float_t> z, const std::complex<float_t> &C) noexcept {
+inline std::complex<float_t>
+iterate_burningship(std::complex<float_t> z,
+                    const std::complex<float_t> &C) noexcept {
   static_assert(std::is_arithmetic_v<float_t>);
 
   z.real(std::abs(z.real()));
@@ -46,8 +48,7 @@ inline bool is_norm2_over_4(const std::complex<float_t> &z) noexcept {
   return (z.real() * z.real() + z.imag() * z.imag()) >= 4;
 }
 
-template <size_t N>
-using const_str = char[N];
+template <size_t N> using const_str = char[N];
 
 template <size_t N>
 constexpr bool is_valid_string(const const_str<N> &str) noexcept {
@@ -60,8 +61,7 @@ constexpr bool is_valid_string(const const_str<N> &str) noexcept {
   return true;
 }
 
-template <uint64_t bin, size_t len>
-struct sequence {
+template <uint64_t bin, size_t len> struct sequence {
   static constexpr uint64_t binary = bin;
   static constexpr size_t length = len;
 
@@ -172,11 +172,15 @@ constexpr uint64_t static_strlen(const const_str<N> &str) noexcept {
   return N - 1;
 }
 
-#define DECLARE_HYBRACTAL_SEQUENCE(str)                                  \
-  ::libHybractal::template sequence<::libHybractal::convert_to_bin(str), \
+#define DECLARE_HYBRACTAL_SEQUENCE(str)                                        \
+  ::libHybractal::template sequence<::libHybractal::convert_to_bin(str),       \
                                     ::libHybractal::static_strlen(str)>
 
-}  // namespace libHybractal
+constexpr uint64_t global_sequence_bin =
+    ::libHybractal::convert_to_bin(HYBRACTAL_SEQUENCE_STR);
+constexpr uint64_t global_sequence_len =
+    ::libHybractal::static_strlen(HYBRACTAL_SEQUENCE_STR);
+} // namespace libHybractal
 
 #include <fractal_map.h>
 
@@ -186,6 +190,6 @@ void compute_frame(const fractal_utils::center_wind<double> &wind_C,
                    fractal_utils::fractal_map &map_age_u16,
                    fractal_utils::fractal_map *map_z_nullable) noexcept;
 
-}  // namespace libHybractal
+} // namespace libHybractal
 
-#endif  // HYBRACTAL_LIBHYBRACTAL_H
+#endif // HYBRACTAL_LIBHYBRACTAL_H

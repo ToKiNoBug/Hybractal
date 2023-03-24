@@ -3,12 +3,13 @@
         "rows": 1080,
         "cols": 1920,
         "hybf-prefix": "./compute/",
-        "png-prefix": "./png/"
+        "png-prefix": "./png/",
+        "maxit": 4096
     },
     "compute": {
-        "centerhex": "",
+        "centerhex": "0x8d9aef6df402d03fafb69a745266eabf",
         "y-span": 4,
-        "frame-num": 60,
+        "frame-num": 14,
         "ratio": 2,
         "threads": 20
     },

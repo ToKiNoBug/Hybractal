@@ -13,7 +13,12 @@ struct common_info {
   size_t cols;
   std::string hybf_prefix;
   std::string png_prefix;
+  int maxit;
 };
+
+std::string hybf_filename(const common_info &ci, int frameidx) noexcept;
+std::string png_filename(const common_info &ci, int frameidx,
+                         int pngidx) noexcept;
 
 struct compute_task {
   std::string center_hex;
@@ -38,5 +43,7 @@ struct video_task {
 };
 
 std::optional<video_task> load_video_task(std::string_view filename) noexcept;
+
+bool run_compute(const common_info &common, const compute_task &ctask) noexcept;
 
 #endif // HYBRACTAL_VIDEOTOOL_VIDEOTOOL_H

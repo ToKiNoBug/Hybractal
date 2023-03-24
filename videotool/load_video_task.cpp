@@ -3,7 +3,17 @@
 #include <fstream>
 #include <hex_convert.h>
 #include <iostream>
+#include <libHybractal.h>
 #include <nlohmann/json.hpp>
+
+std::string hybf_filename(const common_info &ci, int frameidx) noexcept {
+  return fmt::format("{}frame{}.hybf", ci.hybf_prefix, frameidx);
+}
+
+std::string png_filename(const common_info &ci, int frameidx,
+                         int pngidx) noexcept {
+  return fmt::format("{}frame{}-png{}.png", ci.png_prefix, frameidx, pngidx);
+}
 
 using njson = nlohmann::json;
 
@@ -54,6 +64,14 @@ common_info parse_common(const njson &jo) noexcept(false) {
   if ((ret.rows * ret.cols) % 64 != 0) {
     throw std::runtime_error{fmt::format(
         "Num of pixels({}) should be multiples of 64.", ret.rows * ret.cols)};
+    return {};
+  }
+
+  ret.maxit = jo.at("maxit");
+
+  if (ret.maxit <= 0 || ret.maxit > ::libHybractal::maxit_max) {
+    throw std::runtime_error{
+        fmt::format("Invalid value for maxit: {}", ret.maxit)};
     return {};
   }
   return ret;

@@ -93,7 +93,7 @@ bool run_look(const task_look &task) noexcept {
   }
 
   if (task.show_maxit) {
-    cout << fmt::format("Maxit : {}", metainfo.maxit);
+    cout << fmt::format("Maxit : {}\n", metainfo.maxit);
     cout << endl;
   }
 
