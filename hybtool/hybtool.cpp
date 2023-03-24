@@ -34,6 +34,14 @@ int main(int argc, char **argv) {
                "Show configuration when this program is built.")
       ->default_val(false);
 
+  CLI::Validator is_hybf{[](std::string &input) -> std::string {
+                           if (input.ends_with(".hybf")) {
+                             return "";
+                           }
+                           return "Extension name must be .hybf";
+                         },
+                         "Extension name must be .hybf", "Is hybf"};
+
   //////////////////////////////////////
   CLI::App *const compute = app.add_subcommand(
       "compute", "Compute a fractal and generate a .hybf file.");
@@ -71,7 +79,8 @@ int main(int argc, char **argv) {
                    "Range of y.")
       ->default_val(2);
   compute->add_option("-o", task_c.filename, "Generated hybf file.")
-      ->default_val("out.hybf");
+      ->default_val("out.hybf")
+      ->check(is_hybf);
   compute
       ->add_option("--threads,-j", task_c.threads, "Threads used to compute.")
       ->default_val(std::thread::hardware_concurrency())
@@ -88,7 +97,7 @@ int main(int argc, char **argv) {
   render
       ->add_option("--json,--render-json,--rj", task_r.json_file,
                    "Renderer config json file.")
-      ->check(CLI::ExistingFile)
+      ->check(CLI::ExistingFile & is_hybf)
       ->required();
 
   render
@@ -106,36 +115,45 @@ int main(int argc, char **argv) {
   CLI::App *const look = app.add_subcommand("look", "Browse hybf files.");
   look->add_option("file", task_l.file, "Files to look.")
       ->required()
-      ->check(CLI::ExistingFile);
-  look->add_flag("--blocks,--blk", task_l.show_blocks)->default_val(false);
-  look->add_flag("--sequence,--seq", task_l.show_sequence)->default_val(false);
+      ->check(CLI::ExistingFile & is_hybf);
+  look->add_flag("--blocks,--blk", task_l.show_blocks, "Show data blocks.")
+      ->default_val(false);
+  look->add_flag("--sequence,--seq", task_l.show_sequence,
+                 "Show iteration sequence.")
+      ->default_val(false);
   look->add_flag("--size", task_l.show_size, "Show rows and cols.")
       ->default_val(false);
-  look->add_flag("--window,--wind", task_l.show_window)->default_val(false);
-  look->add_flag("--center-hex,--chx", task_l.show_center_hex)
+  look->add_flag("--window,--wind", task_l.show_window, "Show compute window.")
       ->default_val(false);
-  look->add_flag("--maxit", task_l.show_maxit)->default_val(false);
+  look->add_flag("--center-hex,--chx", task_l.show_center_hex,
+                 "Show center hex.")
+      ->default_val(false);
+  look->add_flag("--maxit", task_l.show_maxit, "Show maxit.")
+      ->default_val(false);
 
-  CLI::Validator zst{[](std::string &input) -> std::string {
-                       if (input.ends_with(".zst")) {
-                         return "";
-                       }
-                       return "Extension name must be .zst";
-                     },
-                     "Extension name must be .zst", "Extension name check"};
+  CLI::Validator is_zst{[](std::string &input) -> std::string {
+                          if (input.ends_with(".zst")) {
+                            return "";
+                          }
+                          return "Extension name must be .zst";
+                        },
+                        "Extension name must be .zst", "Is hybf"};
 
   look->add_option("--extract-age-compressed,--eac",
-                   task_l.extract_age_compressed)
-      ->check(zst & !CLI::ExistingFile);
+                   task_l.extract_age_compressed,
+                   "Extract compress age matrix.")
+      ->check(is_zst & !CLI::ExistingFile);
 
-  look->add_option("--extract-age-decompressed,--ead",
-                   task_l.extract_age_decompress)
+  look->add_option("--extract-age-decompressed,--ea",
+                   task_l.extract_age_decompress, "Extract age matrix.")
       ->check(!CLI::ExistingFile);
 
-  look->add_option("--extract-z-compressed,--ezc", task_l.extract_z_compressed)
-      ->check(zst & !CLI::ExistingFile);
+  look->add_option("--extract-z-compressed,--ezc", task_l.extract_z_compressed,
+                   "Extract compressed z matrix.")
+      ->check(is_zst & !CLI::ExistingFile);
 
-  look->add_option("--extract-z-decompress,--ezd", task_l.extract_z_decompress)
+  look->add_option("--extract-z-decompress,--ez", task_l.extract_z_decompress,
+                   "Extract z matrix.")
       ->check(!CLI::ExistingFile);
 
   //////////////////////////////////////
