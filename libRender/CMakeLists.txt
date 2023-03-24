@@ -4,10 +4,6 @@ project(
   VERSION 0.1.0
   LANGUAGES CXX CUDA)
 
-include(${CMAKE_SOURCE_DIR}/cmake/configure_fractal_utils.cmake)
-include(${CMAKE_SOURCE_DIR}/cmake/configure_nlohmann_json.cmake)
-include(${CMAKE_SOURCE_DIR}/cmake/configure_fmtlib.cmake)
-
 find_package(
   fractal_utils
   2.1.2

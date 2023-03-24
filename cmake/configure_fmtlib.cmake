@@ -1,8 +1,8 @@
 include(FetchContent)
 
-find_package(fmt)
+find_package(fmtlib)
 
-if(${fmt_FOUND})
+if(${fmtlib_FOUND})
     return()
 endif()
 

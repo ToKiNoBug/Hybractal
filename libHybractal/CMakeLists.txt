@@ -4,9 +4,6 @@ project(
   VERSION 0.1.0
   LANGUAGES CXX)
 
-include(${CMAKE_SOURCE_DIR}/cmake/configure_fractal_utils.cmake)
-include(${CMAKE_SOURCE_DIR}/cmake/configure_fmtlib.cmake)
-
 # libHybractal
 add_library(Hybractal STATIC libHybractal.h libHybractal.cpp)
 target_compile_features(Hybractal PUBLIC cxx_std_20)
@@ -27,10 +24,8 @@ if(NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
 endif()
 
 # file
-include(${CMAKE_SOURCE_DIR}/cmake/configure_zstd.cmake)
 find_package(zstd 1.5.2 REQUIRED)
 find_package(fmtlib REQUIRED)
-include(${CMAKE_SOURCE_DIR}/cmake/configure_yalantinglibs.cmake)
 find_package(yalantinglibs REQUIRED)
 add_library(Hybfile STATIC libHybfile.h libHybfile.cpp)
 target_compile_features(Hybfile PUBLIC cxx_std_20)
@@ -42,7 +37,6 @@ target_link_libraries(Hybfile PUBLIC Hybractal yalantinglibs::struct_pack
 add_executable(test_compute test_compute.cpp)
 target_link_libraries(test_compute PRIVATE Hybractal)
 
-include(${CMAKE_SOURCE_DIR}/cmake/configure_cli11.cmake)
 add_executable(test_export test_export.cpp)
 target_link_libraries(test_export PRIVATE Hybractal Hybfile)
 target_include_directories(test_export PRIVATE ${CLI11_include_dir})
