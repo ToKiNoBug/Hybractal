@@ -74,6 +74,19 @@ common_info parse_common(const njson &jo) noexcept(false) {
         fmt::format("Invalid value for maxit: {}", ret.maxit)};
     return {};
   }
+
+  ret.frame_num = jo.at("frame-num");
+  if (ret.frame_num <= 0) {
+    throw std::runtime_error{fmt::format(
+        "frame-num should be positive, but it is {}", ret.frame_num)};
+  }
+
+  ret.ratio = jo.at("ratio");
+  if (ret.ratio <= 1) {
+    throw std::runtime_error{
+        fmt::format("ratio should be greater than 1, but it is {}", ret.ratio)};
+  }
+
   return ret;
 }
 
@@ -91,17 +104,6 @@ compute_task parse_compute(const njson &jo) noexcept(false) {
     ret.x_span = jo.at("x-span");
   } else {
     ret.x_span = -1;
-  }
-  ret.frame_num = jo.at("frame-num");
-  if (ret.frame_num <= 0) {
-    throw std::runtime_error{fmt::format(
-        "frame-num should be positive, but it is {}", ret.frame_num)};
-  }
-
-  ret.ratio = jo.at("ratio");
-  if (ret.ratio <= 1) {
-    throw std::runtime_error{
-        fmt::format("ratio should be greater than 1, but it is {}", ret.ratio)};
   }
 
   ret.threads = jo.at("threads");

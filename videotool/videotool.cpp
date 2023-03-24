@@ -44,5 +44,14 @@ int main(int argc, char **argv) {
     }
   }
 
+  if (render->count() > 0) {
+    if (!run_render(taskv.common, taskv.render)) {
+      std::cout << "Renderr terminated with error." << std::endl;
+      return 1;
+    }
+  }
+
+  std::cout << "Success" << std::endl;
+
   return 0;
 }

@@ -2,6 +2,7 @@
 #define HYBRACTAL_VIDEOTOOL_VIDEOTOOL_H
 
 #include <fractal_map.h>
+#include <libHybfile.h>
 #include <optional>
 #include <stddef.h>
 #include <stdint.h>
@@ -14,6 +15,8 @@ struct common_info {
   std::string hybf_prefix;
   std::string png_prefix;
   int maxit;
+  int frame_num;
+  double ratio;
 };
 
 std::string hybf_filename(const common_info &ci, int frameidx) noexcept;
@@ -24,8 +27,6 @@ struct compute_task {
   std::string center_hex;
   double y_span;
   double x_span{-1};
-  double ratio;
-  int frame_num;
   int threads;
 };
 
@@ -44,6 +45,20 @@ struct video_task {
 
 std::optional<video_task> load_video_task(std::string_view filename) noexcept;
 
+struct check_hybf_option {
+  bool nocheck_sequence{false};
+  bool ignore_size{false};
+  libHybractal::hybf_archive *move_archive;
+};
+
+bool check_hybf(std::string_view filename, const common_info &ci,
+                std::vector<uint8_t> &buffer, bool &exist,
+                const check_hybf_option &opt = {}) noexcept;
+
+bool check_hybf_size(const libHybractal::hybf_archive &,
+                     const std::array<size_t, 2> &expected_size) noexcept;
+
 bool run_compute(const common_info &common, const compute_task &ctask) noexcept;
+bool run_render(const common_info &ci, const render_task &rt) noexcept;
 
 #endif // HYBRACTAL_VIDEOTOOL_VIDEOTOOL_H
