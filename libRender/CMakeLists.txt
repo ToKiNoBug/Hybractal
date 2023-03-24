@@ -10,6 +10,7 @@ include(${CMAKE_SOURCE_DIR}/cmake/configure_fmtlib.cmake)
 
 find_package(
   fractal_utils
+  2.1.2
   COMPONENTS core_utils render_utils png_utils
   REQUIRED)
 

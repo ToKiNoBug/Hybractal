@@ -1,5 +1,11 @@
 include(FetchContent)
 
+find_package(fmt)
+
+if(${fmt_FOUND})
+    return()
+endif()
+
 set(CMAKE_CXX_STANDARD 20)
 
 FetchContent_Declare(fmtlib

@@ -6,7 +6,7 @@ include(${CMAKE_SOURCE_DIR}/cmake/configure_cli11.cmake)
 enable_language(CUDA)
 
 find_package(OpenMP REQUIRED)
-find_package(fractal_utils COMPONENTS png_utils REQUIRED)
+find_package(fractal_utils 2.1.2 COMPONENTS png_utils REQUIRED)
 
 add_executable(hybtool
     hybtool.h

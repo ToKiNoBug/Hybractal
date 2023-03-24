@@ -8,6 +8,4 @@ FetchContent_Declare(
   GIT_TAG main
   OVERRIDE_FIND_PACKAGE)
 
-message(STATUS "rua!")
-
 FetchContent_MakeAvailable(yalantinglibs)

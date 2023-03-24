@@ -6,7 +6,7 @@ include(${CMAKE_SOURCE_DIR}/cmake/configure_cli11.cmake)
 
 find_package(Qt6 COMPONENTS Widgets REQUIRED)
 
-find_package(fractal_utils COMPONENTS core_utils zoom_utils render_utils png_utils REQUIRED)
+find_package(fractal_utils 2.1.2 COMPONENTS core_utils zoom_utils render_utils png_utils REQUIRED)
 
 enable_language(CUDA)
 
