@@ -10,7 +10,7 @@ target_compile_features(Hybractal PUBLIC cxx_std_20)
 target_include_directories(Hybractal INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
 find_package(
   fractal_utils
-  2.1.2
+  2.1.3
   COMPONENTS core_utils render_utils
   REQUIRED)
 find_package(OpenMP REQUIRED)

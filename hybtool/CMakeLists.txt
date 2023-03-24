@@ -4,7 +4,7 @@ project(hybtool VERSION 0.1.0 LANGUAGES CXX)
 enable_language(CUDA)
 
 find_package(OpenMP REQUIRED)
-find_package(fractal_utils 2.1.2 COMPONENTS png_utils REQUIRED)
+find_package(fractal_utils 2.1.3 COMPONENTS png_utils REQUIRED)
 
 add_executable(hybtool
     hybtool.h

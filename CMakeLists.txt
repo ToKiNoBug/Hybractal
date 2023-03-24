@@ -16,6 +16,7 @@ include(${CMAKE_SOURCE_DIR}/cmake/configure_nlohmann_json.cmake)
 include(${CMAKE_SOURCE_DIR}/cmake/configure_fmtlib.cmake)
 
 set(CMAKE_CXX_EXTENSIONS OFF)
+set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ON)
 
 add_compile_definitions(HYBRACTAL_SEQUENCE_STR="1011101")
 add_compile_definitions(_USE_MATH_DEFINES)

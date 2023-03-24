@@ -4,11 +4,14 @@ project(
     VERSION 0.1.0
     LANGUAGES CXX)
 
+enable_language(CUDA)
+
 add_executable(videotool
     videotool.h
     videotool.cpp
     load_video_task.cpp
-    compute.cpp)
+    compute.cpp
+    render.cpp)
 
 target_link_libraries(videotool PRIVATE Hybractal Hybfile Render)
 target_include_directories(videotool PRIVATE ${CLI11_include_dir} ${njson_include_dir})

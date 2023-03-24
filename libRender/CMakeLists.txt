@@ -6,7 +6,7 @@ project(
 
 find_package(
   fractal_utils
-  2.1.2
+  2.1.3
   COMPONENTS core_utils render_utils png_utils
   REQUIRED)
 
