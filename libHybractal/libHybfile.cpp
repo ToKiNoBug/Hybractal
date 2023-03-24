@@ -4,7 +4,6 @@
 
 #include "libHybfile.h"
 
-
 libHybractal::hybf_archive::hybf_archive(size_t rows, size_t cols,
                                          bool have_z) {
   this->m_info.rows = rows;
@@ -71,16 +70,10 @@ std::vector<uint8_t> libHybractal::compress(const void *src,
 #include <struct_pack/struct_pack.hpp>
 #include <vector>
 
-
-enum seg_id : int64_t {
-  id_metainfo = 666,
-  id_mat_age = 114514,
-  id_mat_z = 1919810,
-};
-
-libHybractal::hybf_archive libHybractal::hybf_archive::load(
-    std::string_view filename, std::vector<uint8_t> &buffer,
-    std::string *err) noexcept {
+libHybractal::hybf_archive
+libHybractal::hybf_archive::load(std::string_view filename,
+                                 std::vector<uint8_t> &buffer, std::string *err,
+                                 const load_options &opt) noexcept {
   fractal_utils::binfile bfile;
 
   if (!bfile.parse_from_file(filename.data())) {
@@ -115,6 +108,10 @@ libHybractal::hybf_archive libHybractal::hybf_archive::load(
       return {};
     }
 
+    if (opt.compressed_age != nullptr) {
+      *opt.compressed_age = buffer;
+    }
+
     decompress(blkp_age->data, blkp_age->bytes, buffer);
 
     if (buffer.size() != rows * cols * sizeof(uint16_t)) {
@@ -130,7 +127,17 @@ libHybractal::hybf_archive libHybractal::hybf_archive::load(
 
   {
     auto blkp_z = bfile.find_block_single(id_mat_z);
+
+    if (opt.compressed_mat_z != nullptr) {
+      opt.compressed_mat_z->clear();
+    }
+
     if (blkp_z != nullptr) {
+
+      if (opt.compressed_mat_z != nullptr) {
+        *opt.compressed_mat_z = buffer;
+      }
+
       decompress(blkp_z->data, blkp_z->bytes, buffer);
 
       if (buffer.size() != rows * cols * sizeof(std::complex<double>)) {
@@ -142,6 +149,10 @@ libHybractal::hybf_archive libHybractal::hybf_archive::load(
       result.data_z.resize(rows * cols);
       memcpy(result.data_z.data(), buffer.data(), buffer.size());
     }
+  }
+
+  if (opt.binfile != nullptr) {
+    *opt.binfile = std::move(bfile);
   }
 
   return result;

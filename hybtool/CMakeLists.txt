@@ -8,7 +8,13 @@ enable_language(CUDA)
 find_package(OpenMP REQUIRED)
 find_package(fractal_utils COMPONENTS png_utils REQUIRED)
 
-add_executable(hybtool hybtool.cpp)
+add_executable(hybtool
+    hybtool.h
+    hybtool.cpp
+    compute.cpp
+    render.cpp
+    look.cpp)
+
 target_link_libraries(hybtool PRIVATE Hybractal Hybfile Render OpenMP::OpenMP_CXX fractal_utils::png_utils)
 target_include_directories(hybtool PRIVATE ${CLI11_include_dir})
 
