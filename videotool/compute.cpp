@@ -43,11 +43,11 @@ bool run_compute(const common_info &common,
 
     archive.metainfo().window_xy_span[0] = ctask.x_span * factor;
     archive.metainfo().window_xy_span[1] = ctask.y_span * factor;
-
+    cout << endl;
     std::string filename = hybf_filename(common, fidx);
-    cout << fmt::format("[{}% : {} / {}] : {}", float(counter) / task_num,
-                        counter, task_num, filename)
-         << endl;
+    cout << fmt::format("[{:^6.1f}% : {:^3} / {:^3}] : {}",
+                        100 * float(counter) / task_num, counter, task_num,
+                        filename);
 
     auto mat_age = archive.map_age();
     auto mat_z = archive.map_z();
@@ -64,8 +64,8 @@ bool run_compute(const common_info &common,
     counter++;
   }
 
-  cout << fmt::format("[{}% : {} / {}] : All tasks finished.",
-                      float(counter) / std::max(1, task_num), counter, task_num)
+  cout << fmt::format("\n[{:^6.1f}% : {:^3} / {:^3}] : All tasks finished.",
+                      100.0f, counter, task_num)
        << endl;
 
   return true;
