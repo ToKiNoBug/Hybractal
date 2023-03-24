@@ -8,9 +8,6 @@
 
 using std::cout, std::cerr, std::endl;
 
-bool check_hybf(std::string_view filename, std::vector<uint8_t> &buffer,
-                bool &do_delete) noexcept;
-
 std::vector<int> unfinished_tasks(const common_info &common,
                                   const compute_task &ct) noexcept;
 
@@ -39,7 +36,7 @@ bool run_compute(const common_info &common,
 
   int counter = 0;
   for (int fidx : frame_idxs) {
-    const double factor = std::pow(ctask.ratio, fidx);
+    const double factor = std::pow(common.ratio, -fidx);
 
     archive.metainfo().window_xy_span[0] = ctask.x_span * factor;
     archive.metainfo().window_xy_span[1] = ctask.y_span * factor;
@@ -71,12 +68,14 @@ bool run_compute(const common_info &common,
   return true;
 }
 
-bool check_hybf(std::string_view filename, std::vector<uint8_t> &buffer,
-                bool &do_delete) noexcept {
-  do_delete = false;
+bool check_hybf(std::string_view filename, const common_info &ci,
+                std::vector<uint8_t> &buffer, bool &exist,
+                const check_hybf_option &opt) noexcept {
   if (!std::filesystem::is_regular_file(filename)) {
+    exist = false;
     return false;
   }
+  exist = true;
 
   std::string err;
   libHybractal::hybf_archive hybf_archive =
@@ -88,20 +87,47 @@ bool check_hybf(std::string_view filename, std::vector<uint8_t> &buffer,
         "considered to be not-computed. This file will be "
         "deleted and compute again.",
         filename, err);
-    do_delete = true;
     return false;
   }
 
-  if ((hybf_archive.metainfo().sequence_bin !=
-       ::libHybractal::global_sequence_bin) ||
-      hybf_archive.metainfo().sequence_len !=
-          ::libHybractal::global_sequence_len) {
-    cout << fmt::format("Warning: {} is a hybf file, but the sequence(\{:{}b}) "
-                        "mismatch with this program's configuration({}).",
-                        filename, hybf_archive.metainfo().sequence_bin,
-                        hybf_archive.metainfo().sequence_len,
-                        HYBRACTAL_SEQUENCE_STR);
-    do_delete = true;
+  if (!opt.nocheck_sequence) {
+    if ((hybf_archive.metainfo().sequence_bin !=
+         ::libHybractal::global_sequence_bin) ||
+        hybf_archive.metainfo().sequence_len !=
+            ::libHybractal::global_sequence_len) {
+      cout << fmt::format(
+          "Warning: {} is a hybf file, but the sequence(\{:{}b}) "
+          "mismatch with this program's configuration({}).",
+          filename, hybf_archive.metainfo().sequence_bin,
+          hybf_archive.metainfo().sequence_len, HYBRACTAL_SEQUENCE_STR);
+      return false;
+    }
+  }
+
+  if (!opt.ignore_size) {
+    if (!check_hybf_size(hybf_archive, {ci.rows, ci.cols})) {
+      cout << fmt::format("Warning: {} is a hybf file, but the size([{}, {}]) "
+                          "mismatch with task([{}, {}])",
+                          filename, hybf_archive.metainfo().rows,
+                          hybf_archive.metainfo().cols, ci.rows, ci.cols)
+           << endl;
+      return false;
+    }
+  }
+
+  if (opt.move_archive != nullptr) {
+    *opt.move_archive = std::move(hybf_archive);
+  }
+
+  return true;
+}
+
+bool check_hybf_size(const libHybractal::hybf_archive &archive,
+                     const std::array<size_t, 2> &expected_size) noexcept {
+  if (archive.metainfo().rows != expected_size[0]) {
+    return false;
+  }
+  if (archive.metainfo().cols != expected_size[1]) {
     return false;
   }
 
@@ -112,24 +138,24 @@ std::vector<int> unfinished_tasks(const common_info &common,
                                   const compute_task &ct) noexcept {
 
   std::vector<uint8_t> need_compute;
-  need_compute.resize(ct.frame_num);
-  for (int fidx = 0; fidx < ct.frame_num; fidx++) {
+  need_compute.resize(common.frame_num);
+  for (int fidx = 0; fidx < common.frame_num; fidx++) {
 
     need_compute[fidx] = true;
   }
 
 #pragma omp parallel for schedule(dynamic)
-  for (int fidx = 0; fidx < ct.frame_num; fidx++) {
+  for (int fidx = 0; fidx < common.frame_num; fidx++) {
     thread_local std::vector<uint8_t> buffer;
 
-    bool do_delete;
+    bool exist;
     std::string filename = hybf_filename(common, fidx);
-    if (check_hybf(filename, buffer, do_delete)) {
+    if (check_hybf(filename, common, buffer, exist)) {
       need_compute[fidx] = false;
       continue;
     }
 
-    if (do_delete) {
+    if (exist) {
       const bool ok = std::filesystem::remove(filename);
 
       if (!ok) {
@@ -139,9 +165,9 @@ std::vector<int> unfinished_tasks(const common_info &common,
   }
 
   std::vector<int> ret;
-  ret.reserve(ct.frame_num);
+  ret.reserve(common.frame_num);
 
-  for (int fidx = 0; fidx < ct.frame_num; fidx++) {
+  for (int fidx = 0; fidx < common.frame_num; fidx++) {
     if (need_compute[fidx]) {
       ret.emplace_back(fidx);
     }
