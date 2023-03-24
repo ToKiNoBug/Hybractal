@@ -75,7 +75,7 @@ int main(int argc, char **argv) {
   const std::array<int, 2> window_size{(int)metainfo.info.rows,
                                        (int)metainfo.info.cols};
 
-  fractal_utils::mainwindow window(0.0, nullptr, window_size, 2);
+  fractal_utils::mainwindow window(0.0, nullptr, window_size, sizeof(uint16_t));
 
   window.set_window(metainfo.info.window());
   window.display_range();

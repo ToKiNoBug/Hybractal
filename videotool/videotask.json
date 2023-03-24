@@ -1,0 +1,21 @@
+{
+    "common": {
+        "rows": 1080,
+        "cols": 1920,
+        "hybf-prefix": "./compute/",
+        "png-prefix": "./png/"
+    },
+    "compute": {
+        "centerhex": "",
+        "y-span": 4,
+        "frame-num": 60,
+        "ratio": 2,
+        "threads": 20
+    },
+    "render": {
+        "png-per-frame": 60,
+        "extra-png-num": 4,
+        "config-file": "render1.json",
+        "threads": 40
+    }
+}

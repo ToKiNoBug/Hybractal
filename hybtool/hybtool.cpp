@@ -28,6 +28,8 @@ This file is part of Hybractal.
 int main(int argc, char **argv) {
   CLI::App app;
 
+  app.set_version_flag("--version,-v", HYBRACTAL_VERSION);
+
   bool show_config{false};
 
   app.add_flag("--show-config,--sc", show_config,
