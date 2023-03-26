@@ -21,6 +21,10 @@ if(NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
   if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     target_compile_options(Hybractal PRIVATE "-Ofast")
   endif()
+
+  if(${MSVC})
+    target_compile_options(Hybractal PRIVATE "/fp:fast")
+  endif()
 endif()
 
 # file
@@ -30,8 +34,11 @@ find_package(yalantinglibs REQUIRED)
 add_library(Hybfile STATIC libHybfile.h libHybfile.cpp)
 target_compile_features(Hybfile PUBLIC cxx_std_20)
 target_include_directories(Hybfile INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
-target_link_libraries(Hybfile PUBLIC Hybractal yalantinglibs::struct_pack
-  zstd::libzstd_static fmt::fmt)
+target_link_libraries(Hybfile PUBLIC
+  Hybractal
+  yalantinglibs::struct_pack
+  zstd::libzstd_static
+  fmt::fmt)
 
 # tests
 add_executable(test_compute test_compute.cpp)

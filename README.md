@@ -13,3 +13,10 @@ Hybractal is a tool-chain for computing and rendering hybrid fractal.
 7. [nlohmann json](https://github.com/nlohmann/json)
 8. [yalantinglibs](https://github.com/alibaba/yalantinglibs)
 9. [CUDA](https://developer.nvidia.com/zh-cn/cuda-zone)
+
+## Dots
+
+| Sequence  |             Center hex             | Critical y span |
+| :-------: | :--------------------------------: | :-------------: |
+|  1011101  | 0x3813c81e03fbd53fbfe21384b148bfbf |   3.55271e-15   |
+| 100101001 | 0x96034F7405FFD73FC6AAA91F09CCE6BF |    1.394-12     |

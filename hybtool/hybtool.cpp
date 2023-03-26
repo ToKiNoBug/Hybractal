@@ -96,16 +96,25 @@ int main(int argc, char **argv) {
       app.add_subcommand("render", "Render a png image from a .hybf file.");
   task_render task_r;
 
+  CLI::Validator is_json(
+      [](std::string &str) -> std::string {
+        if (str.ends_with(".json")) {
+          return "";
+        }
+        return "Extension must be json.";
+      },
+      "Is json");
+
   render
       ->add_option("--json,--render-json,--rj", task_r.json_file,
                    "Renderer config json file.")
-      ->check(CLI::ExistingFile & is_hybf)
+      ->check(CLI::ExistingFile & is_json)
       ->required();
 
   render
       ->add_option("source_file", task_r.hybf_file,
                    ".hybf file used to render.")
-      ->check(CLI::ExistingFile)
+      ->check(CLI::ExistingFile & is_hybf)
       ->required();
 
   render->add_option("-o", task_r.png_file, "Generated png file.")
@@ -139,7 +148,7 @@ int main(int argc, char **argv) {
                           }
                           return "Extension name must be .zst";
                         },
-                        "Extension name must be .zst", "Is hybf"};
+                        "Extension name must be .zst", "Is zst"};
 
   look->add_option("--extract-age-compressed,--eac",
                    task_l.extract_age_compressed,

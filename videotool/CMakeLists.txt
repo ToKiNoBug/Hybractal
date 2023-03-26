@@ -19,3 +19,6 @@ target_include_directories(videotool PRIVATE ${CLI11_include_dir} ${njson_includ
 find_package(fmtlib REQUIRED)
 find_package(OpenMP REQUIRED)
 target_link_libraries(videotool PRIVATE fmt OpenMP::OpenMP_CXX)
+
+install(TARGETS videotool
+    RUNTIME DESTINATION bin)

@@ -5,6 +5,9 @@
 
 int main(int argc, char **argv) {
   CLI::App app;
+
+  app.set_version_flag("--version,-v", HYBRACTAL_VERSION);
+
   std::string taskfile;
   app.add_option("taskfile", taskfile, "Json task file")
       ->required()
