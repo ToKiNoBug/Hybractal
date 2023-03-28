@@ -1,4 +1,5 @@
 #include <fmt/format.h>
+#include <hex_convert.h>
 
 #include <iostream>
 
@@ -70,10 +71,162 @@ std::vector<uint8_t> libHybractal::compress(const void *src,
 #include <struct_pack/struct_pack.hpp>
 #include <vector>
 
-libHybractal::hybf_archive
-libHybractal::hybf_archive::load(std::string_view filename,
-                                 std::vector<uint8_t> &buffer, std::string *err,
-                                 const load_options &opt) noexcept {
+std::variant<libHybractal::hybf_ir_new, libHybractal::hybf_metainfo_old>
+decode_metainfo(const void *src, size_t bytes, std::string &err) noexcept {
+  struct_pack::errc code;
+  err.clear();
+  {
+    libHybractal::hybf_metainfo_old temp;
+    code = struct_pack::deserialize_to(temp, (const char *)src, bytes);
+
+    if (code != struct_pack::errc::ok) {
+      err += fmt::format(
+          "Failed to deserialize to libHybractal::hybf_metainfo_old, detail: "
+          "{}\n",
+          int64_t(code));
+    } else {
+      err.clear();
+      return temp;
+    }
+  }
+
+  {
+    libHybractal::hybf_ir_new temp;
+    code = struct_pack::deserialize_to(temp, (const char *)src, bytes);
+
+    if (code != struct_pack::errc::ok) {
+      err += fmt::format(
+          "Failed to deserialize to ::hybf_ir_new, detail: "
+          "{}\n",
+          int64_t(code));
+    } else {
+      err.clear();
+      return temp;
+    }
+  }
+
+  return {};
+}
+
+libHybractal::hybf_metainfo_new libHybractal::hybf_metainfo_new::parse_metainfo(
+    const void *src, size_t bytes, std::string &err) noexcept {
+  auto temp = decode_metainfo(src, bytes, err);
+
+  libHybractal::hybf_metainfo_new ret;
+  if (!err.empty()) {
+    return {};
+  }
+
+  if (std::get_if<libHybractal::hybf_metainfo_old>(&temp) != nullptr) {
+    const auto &old = std::get<libHybractal::hybf_metainfo_old>(temp);
+
+    ret.sequence_bin = old.sequence_bin;
+    ret.sequence_len = old.sequence_len;
+    ret.maxit = old.maxit;
+    ret.rows = old.rows;
+    ret.cols = old.cols;
+    ret.wind.center[0] = old.window_center[0];
+    ret.wind.center[1] = old.window_center[1];
+    ret.wind.x_span = old.window_xy_span[0];
+    ret.wind.y_span = old.window_xy_span[1];
+    ret.float_precision = 2;
+    return ret;
+  }
+
+  const auto &ir = std::get<hybf_ir_new>(temp);
+  ret.sequence_bin = ir.sequence_bin;
+  ret.sequence_len = ir.sequence_len;
+  ret.maxit = ir.maxit;
+  ret.rows = ir.rows;
+  ret.cols = ir.cols;
+  ret.chx = ir.center_hex;
+  ret.float_precision = ir.float_t_prec;
+
+  if (ir.float_t_prec == HYBRACTAL_FLT_PRECISION) {
+    auto bytes_opt = fractal_utils::hex_2_bin(
+        ir.center_hex, ret.wind.center.data(), sizeof(ret.wind.center));
+    if (!bytes_opt.has_value()) {
+      err = fmt::format("center_hex is invalid. Center_hex = \"{}\"",
+                        ir.center_hex);
+      return {};
+    }
+    if (bytes_opt.value() != sizeof(ret.wind.center)) {
+      err = fmt::format(
+          "center_hex is invalid. Center_hex = \"{}\",bytes = {}, but expected "
+          "{} bytes.",
+          ir.center_hex, bytes_opt.value(), sizeof(ret.wind.center));
+      return {};
+    }
+  } else {
+    const char *beg = ir.center_hex.c_str();
+    if (ir.center_hex.starts_with("0x")) {
+      beg += 2;
+    }
+
+    const size_t offset = float_bytes(ir.float_t_prec);
+
+    const size_t len = strlen(beg);
+    if (len != offset * 2 * 2) {
+      err = fmt::format(
+          "Length of center_hex is invalid. center_hex = \"{}\", length = {}, "
+          "but expected {} bytes.",
+          ir.center_hex, len, offset * 2);
+      return {};
+    }
+
+    std::string err_cvt[2];
+
+    ret.wind.center[0] = any_type_to_compute_t(beg, beg + offset, err_cvt[0]);
+    beg += offset;
+    ret.wind.center[1] = any_type_to_compute_t(beg, beg + offset, err_cvt[1]);
+
+    if (!err_cvt[0].empty() || !err_cvt[1].empty()) {
+      err = fmt::format(
+          "One or more value in center hex failed to compute. Error 0 = "
+          "\"{}\", Error 1 = \"{}\"",
+          err_cvt[0], err_cvt[1]);
+      return {};
+    }
+  }
+
+  return ret;
+}
+
+libHybractal::hybf_ir_new libHybractal::hybf_metainfo_new::to_ir()
+    const noexcept {
+  hybf_ir_new ir;
+
+  ir.sequence_bin = this->sequence_bin;
+  ir.sequence_len = this->sequence_len;
+  ir.window_xy_span[0] =
+      float_type_cvt<hybf_float_t, double>(this->wind.x_span);
+  ir.window_xy_span[1] =
+      float_type_cvt<hybf_float_t, double>(this->wind.y_span);
+
+  ir.maxit = this->maxit;
+  ir.rows = this->rows;
+  ir.cols = this->cols;
+  ir.float_t_prec = this->float_precision;
+
+  if (this->chx.empty()) {
+    std::string hex;
+    hex.resize(4096);
+    auto ret = fractal_utils::bin_2_hex(this->wind.center.data(),
+                                        sizeof(this->wind.center), hex.data(),
+                                        hex.size(), true);
+
+    hex.resize(ret.value());
+    ir.center_hex = hex;
+  } else {
+    ir.center_hex = this->chx;
+  }
+
+  return ir;
+}
+
+libHybractal::hybf_archive libHybractal::hybf_archive::load(
+    std::string_view filename, std::vector<uint8_t> &buffer, std::string *err,
+    const load_options &opt) noexcept {
   fractal_utils::binfile bfile;
 
   if (!bfile.parse_from_file(filename.data())) {
@@ -87,19 +240,17 @@ libHybractal::hybf_archive::load(std::string_view filename,
       err->assign("metadata not found.");
       return {};
     }
-    struct_pack::errc error_code = struct_pack::deserialize_to(
-        result.m_info, (const char *)blkp_meta->data, blkp_meta->bytes);
-
-    if (error_code != struct_pack::errc::ok) {
-      err->assign(fmt::format("deserialization failed. error code = {}",
-                              (int64_t)error_code));
+    result.metainfo() = hybf_metainfo_new::parse_metainfo(
+        blkp_meta->data, blkp_meta->bytes, *err);
+    if (!err->empty()) {
+      *err = fmt::format("Failed to parse metainfo. Detail: {}", *err);
       return {};
     }
   }
   const size_t rows = result.rows();
   const size_t cols = result.cols();
 
-  buffer.reserve(rows * cols * sizeof(std::complex<double>));
+  buffer.reserve(rows * cols * sizeof(std::complex<hybf_store_t>));
 
   {
     auto blkp_age = bfile.find_block_single(id_mat_age);
@@ -133,17 +284,16 @@ libHybractal::hybf_archive::load(std::string_view filename,
     }
 
     if (blkp_z != nullptr) {
-
       if (opt.compressed_mat_z != nullptr) {
         *opt.compressed_mat_z = buffer;
       }
 
       decompress(blkp_z->data, blkp_z->bytes, buffer);
 
-      if (buffer.size() != rows * cols * sizeof(std::complex<double>)) {
+      if (buffer.size() != rows * cols * sizeof(std::complex<hybf_store_t>)) {
         err->assign(fmt::format(
             "Size of mat_age mismatch. Expected {} but in fact bytes.",
-            rows * cols * sizeof(std::complex<double>), buffer.size()));
+            rows * cols * sizeof(std::complex<hybf_store_t>), buffer.size()));
         return {};
       }
       result.data_z.resize(rows * cols);
@@ -162,7 +312,8 @@ bool libHybractal::hybf_archive::save(
     std::string_view filename) const noexcept {
   fractal_utils::binfile bfile;
 
-  std::vector<char> meta_info_seralized = struct_pack::serialize(this->m_info);
+  std::vector<char> meta_info_seralized =
+      struct_pack::serialize(this->m_info.to_ir());
   bfile.blocks.emplace_back(
       fractal_utils::data_block{id_metainfo, meta_info_seralized.size(), 0,
                                 meta_info_seralized.data(), false});

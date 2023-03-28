@@ -1,7 +1,7 @@
-find_package(Boost COMPONENTS multiprecison)
+find_package(Boost COMPONENTS multiprecision)
 
 if(${Boost_FOUND})
-    return()
+    #return()
 endif()
 
 include(FetchContent)

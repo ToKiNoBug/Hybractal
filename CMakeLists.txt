@@ -20,13 +20,20 @@ include(${CMAKE_SOURCE_DIR}/cmake/configure_zstd.cmake)
 include(${CMAKE_SOURCE_DIR}/cmake/configure_yalantinglibs.cmake)
 include(${CMAKE_SOURCE_DIR}/cmake/configure_nlohmann_json.cmake)
 include(${CMAKE_SOURCE_DIR}/cmake/configure_fmtlib.cmake)
+include(${CMAKE_SOURCE_DIR}/cmake/configure_boost_mp.cmake)
+
+
 
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ON)
 
-add_compile_definitions(HYBRACTAL_SEQUENCE_STR="10000000000000001")
+set(HYB_sequence "10000000000000001" CACHE STRING "")
+set(HYB_float_precision 8 CACHE STRING "The bytes of floating point number. Supported values: 1, 2, 4, 8")
+
+add_compile_definitions("HYBRACTAL_SEQUENCE_STR=\"${HYB_sequence}\"")
 add_compile_definitions(_USE_MATH_DEFINES)
 add_compile_definitions("HYBRACTAL_VERSION=\"${PROJECT_VERSION}\"")
+add_compile_definitions("HYBRACTAL_FLT_PRECISION=${HYB_float_precision}")
 
 add_subdirectory(libHybractal)
 add_subdirectory(libRender)
