@@ -45,17 +45,13 @@ int load(std::string_view filename) noexcept {
                       file.metainfo().sequence_bin,
                       file.metainfo().sequence_len);
 
-  std::string center_hex;
-  center_hex.resize(64);
-
-  auto ret =
-      fractal_utils::bin_2_hex(file.metainfo().window().center.data(),
-                               sizeof(file.metainfo().window().center),
-                               center_hex.data(), center_hex.size(), true);
-  center_hex.resize(ret.value());
-  cout << fmt::format("    center = {} + {} i, center_hex = {}\n",
-                      file.metainfo().window().center[0],
-                      file.metainfo().window().center[1], center_hex);
+  cout << fmt::format(
+      "    center = {} + {} i, center_hex = {}\n",
+      libHybractal::float_type_cvt<libHybractal::hybf_float_t, double>(
+          file.metainfo().window().center[0]),
+      libHybractal::float_type_cvt<libHybractal::hybf_float_t, double>(
+          file.metainfo().window().center[1]),
+      file.metainfo().center_hex());
 
   return 0;
 }

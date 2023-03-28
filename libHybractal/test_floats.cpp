@@ -1,11 +1,26 @@
-
 #include <boost/multiprecision/cpp_bin_float.hpp>
+#include <fmt/format.h>
+#include <iostream>
+#include <libHybractal.h>
+
+using std::cout, std::endl;
 
 int main() {
-  boost::multiprecision::cpp_bin_float_quad quad;
+  using bst_fl128 = boost::multiprecision::cpp_bin_float_quad;
 
-  quad = 4;
+  bst_fl128 quad;
 
-  double val;
-  val = quad.convert_to<double>();
+  constexpr size_t quad_bytes = sizeof(quad);
+
+  constexpr size_t mantisa_count = decltype(quad)::backend_type::bit_count;
+
+  quad = -0.3;
+
+  std::vector<uint8_t> vec;
+
+  auto ret = quad.convert_to<std::string>();
+
+  cout << ret << endl;
+
+  return 0;
 }

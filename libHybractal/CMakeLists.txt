@@ -10,11 +10,12 @@ target_compile_features(Hybractal PUBLIC cxx_std_20)
 target_include_directories(Hybractal INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
 find_package(
   fractal_utils
-  2.1.3
+  ${HYB_fractal_utils_ver}
   COMPONENTS core_utils render_utils
   REQUIRED)
 find_package(OpenMP REQUIRED)
-target_link_libraries(Hybractal PUBLIC 
+find_package(Boost)
+target_link_libraries(Hybractal PUBLIC
   fractal_utils::core_utils
   OpenMP::OpenMP_CXX
   Boost::multiprecision
@@ -34,8 +35,6 @@ endif()
 find_package(zstd 1.5.2 REQUIRED)
 find_package(fmtlib REQUIRED)
 find_package(yalantinglibs REQUIRED)
-find_package(Boost REQUIRED)
-
 
 add_library(Hybfile STATIC libHybfile.h libHybfile.cpp)
 target_compile_features(Hybfile PUBLIC cxx_std_20)
@@ -59,7 +58,7 @@ target_link_libraries(test_load PRIVATE Hybractal Hybfile fmt::fmt)
 target_include_directories(test_load PRIVATE ${CLI11_include_dir})
 
 add_executable(test_floats test_floats.cpp)
-target_link_libraries(test_floats PRIVATE Boost::multiprecision)
+target_link_libraries(test_floats PRIVATE Boost::multiprecision Hybractal)
 
 install(TARGETS Hybractal Hybfile
   RUNTIME DESTINATION bin

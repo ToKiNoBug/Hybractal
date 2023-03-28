@@ -27,6 +27,11 @@ int main(int argc, char **argv) {
 
   libHybractal::hybf_archive hf{rows, cols, save_mat_z};
 
+  hf.metainfo().wind.center[0] = wind.center[0];
+  hf.metainfo().wind.center[1] = wind.center[1];
+  hf.metainfo().wind.x_span = wind.x_span;
+  hf.metainfo().wind.y_span = wind.y_span;
+
   if (!hf.save(filename)) {
     std::cout << "Failed to serialize" << std::endl;
     return 1;

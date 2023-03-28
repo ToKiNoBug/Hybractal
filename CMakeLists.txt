@@ -7,11 +7,15 @@ project(
 include(CTest)
 enable_testing()
 
+set(CMAKE_FIND_NO_INSTALL_PREFIX TRUE)
+
 # message(STATUS "CMAKE_CXX_COMPILER = " ${CMAKE_CXX_COMPILER})
 cmake_path(GET CMAKE_CXX_COMPILER PARENT_PATH compiler_path)
 cmake_path(GET compiler_path PARENT_PATH compiler_path)
 list(APPEND CMAKE_PREFIX_PATH ${compiler_path})
 unset(compiler_path)
+
+set(HYB_fractal_utils_ver 2.2.0)
 
 include(${CMAKE_SOURCE_DIR}/cmake/configure_fractal_utils.cmake)
 include(${CMAKE_SOURCE_DIR}/cmake/configure_cli11.cmake)
@@ -21,8 +25,6 @@ include(${CMAKE_SOURCE_DIR}/cmake/configure_yalantinglibs.cmake)
 include(${CMAKE_SOURCE_DIR}/cmake/configure_nlohmann_json.cmake)
 include(${CMAKE_SOURCE_DIR}/cmake/configure_fmtlib.cmake)
 include(${CMAKE_SOURCE_DIR}/cmake/configure_boost_mp.cmake)
-
-
 
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ON)

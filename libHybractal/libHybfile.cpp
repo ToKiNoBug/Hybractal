@@ -95,10 +95,9 @@ decode_metainfo(const void *src, size_t bytes, std::string &err) noexcept {
     code = struct_pack::deserialize_to(temp, (const char *)src, bytes);
 
     if (code != struct_pack::errc::ok) {
-      err += fmt::format(
-          "Failed to deserialize to ::hybf_ir_new, detail: "
-          "{}\n",
-          int64_t(code));
+      err += fmt::format("Failed to deserialize to ::hybf_ir_new, detail: "
+                         "{}\n",
+                         int64_t(code));
     } else {
       err.clear();
       return temp;
@@ -108,8 +107,9 @@ decode_metainfo(const void *src, size_t bytes, std::string &err) noexcept {
   return {};
 }
 
-libHybractal::hybf_metainfo_new libHybractal::hybf_metainfo_new::parse_metainfo(
-    const void *src, size_t bytes, std::string &err) noexcept {
+libHybractal::hybf_metainfo_new
+libHybractal::hybf_metainfo_new::parse_metainfo(const void *src, size_t bytes,
+                                                std::string &err) noexcept {
   auto temp = decode_metainfo(src, bytes, err);
 
   libHybractal::hybf_metainfo_new ret;
@@ -130,6 +130,14 @@ libHybractal::hybf_metainfo_new libHybractal::hybf_metainfo_new::parse_metainfo(
     ret.wind.x_span = old.window_xy_span[0];
     ret.wind.y_span = old.window_xy_span[1];
     ret.float_precision = 2;
+
+    ret.chx.resize(4096);
+
+    auto temp = fractal_utils::bin_2_hex(old.window_center.data(),
+                                         sizeof(old.window_center),
+                                         ret.chx.data(), ret.chx.size(), true);
+    ret.chx.resize(temp.value());
+
     return ret;
   }
 
@@ -192,8 +200,8 @@ libHybractal::hybf_metainfo_new libHybractal::hybf_metainfo_new::parse_metainfo(
   return ret;
 }
 
-libHybractal::hybf_ir_new libHybractal::hybf_metainfo_new::to_ir()
-    const noexcept {
+libHybractal::hybf_ir_new
+libHybractal::hybf_metainfo_new::to_ir() const noexcept {
   hybf_ir_new ir;
 
   ir.sequence_bin = this->sequence_bin;
@@ -224,9 +232,10 @@ libHybractal::hybf_ir_new libHybractal::hybf_metainfo_new::to_ir()
   return ir;
 }
 
-libHybractal::hybf_archive libHybractal::hybf_archive::load(
-    std::string_view filename, std::vector<uint8_t> &buffer, std::string *err,
-    const load_options &opt) noexcept {
+libHybractal::hybf_archive
+libHybractal::hybf_archive::load(std::string_view filename,
+                                 std::vector<uint8_t> &buffer, std::string *err,
+                                 const load_options &opt) noexcept {
   fractal_utils::binfile bfile;
 
   if (!bfile.parse_from_file(filename.data())) {

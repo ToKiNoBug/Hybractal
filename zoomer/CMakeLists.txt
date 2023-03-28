@@ -3,7 +3,7 @@ project(hybractal_zoomer VERSION 0.1.0 LANGUAGES CXX)
 
 find_package(Qt6 COMPONENTS Widgets REQUIRED)
 
-find_package(fractal_utils 2.1.2 COMPONENTS core_utils zoom_utils render_utils png_utils REQUIRED)
+find_package(fractal_utils ${HYB_fractal_utils_ver} COMPONENTS core_utils zoom_utils render_utils png_utils REQUIRED)
 
 enable_language(CUDA)
 
