@@ -149,6 +149,8 @@ libHybractal::hybf_metainfo_new::parse_metainfo(const void *src, size_t bytes,
   ret.cols = ir.cols;
   ret.chx = ir.center_hex;
   ret.float_precision = ir.float_t_prec;
+  ret.wind.x_span = ir.window_xy_span[0];
+  ret.wind.y_span = ir.window_xy_span[1];
 
   if (ir.float_t_prec == HYBRACTAL_FLT_PRECISION) {
     auto bytes_opt = fractal_utils::hex_2_bin(
@@ -211,8 +213,10 @@ libHybractal::hybf_metainfo_new::to_ir() const noexcept {
   ir.sequence_len = this->sequence_len;
   ir.window_xy_span[0] =
       float_type_cvt<hybf_float_t, double>(this->wind.x_span);
+  assert(ir.window_xy_span[0] != 0);
   ir.window_xy_span[1] =
       float_type_cvt<hybf_float_t, double>(this->wind.y_span);
+  assert(ir.window_xy_span[1] != 0);
 
   ir.maxit = this->maxit;
   ir.rows = this->rows;

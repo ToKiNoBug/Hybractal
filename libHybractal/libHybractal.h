@@ -52,24 +52,26 @@ inline dst_t float_type_cvt(const src_t &src) noexcept {
     return src;
   }
 
-  if constexpr (is_dst_trival && is_src_trival) {
+  if constexpr (is_src_trival && is_dst_trival) {
     return dst_t(src);
   }
 
   if constexpr (!is_src_trival && is_dst_trival) {
-    // convert from float/double to boost types
+    // convert from boost types to float/double
     return src.template convert_to<dst_t>();
   }
 
-  if constexpr (is_dst_trival && !is_dst_trival) {
+  if constexpr (is_src_trival && !is_dst_trival) {
     // convert from boost types to float/double
     return dst_t(src);
   }
 
-  if constexpr (!is_dst_trival && !is_dst_trival) {
+  if constexpr (!is_src_trival && !is_dst_trival) {
     // convert from boost types to boost types
     return dst_t(src);
   }
+  assert(false);
+  return {};
 }
 
 constexpr size_t float_bytes(int precision) noexcept {
