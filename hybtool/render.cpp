@@ -66,7 +66,7 @@ bool run_render(const task_render &task) noexcept {
   wtime = omp_get_wtime() - wtime;
 
   if (task.bechmark) {
-    std::cout << fmt::format("Render cost {} seconds.\n", wtime);
+    std::cout << fmt::format("Render cost {} mili seconds.\n", wtime * 1000);
   }
 
   wtime = omp_get_wtime();
@@ -80,7 +80,8 @@ bool run_render(const task_render &task) noexcept {
   }
 
   if (task.bechmark) {
-    std::cout << fmt::format("Image encoding cost {} seconds.\n", wtime);
+    std::cout << fmt::format("Image encoding cost {} mili seconds.\n",
+                             wtime * 1000);
   }
 
   return true;

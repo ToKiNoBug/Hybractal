@@ -28,13 +28,15 @@ set(default_hybf_file ${CMAKE_CURRENT_BINARY_DIR}/default.hybf)
 
 add_custom_target(hybf-default
     ALL
-    COMMAND ${CMAKE_BINARY_DIR}/hybtool/hybtool compute --rows 720 --cols 1080 --maxit 4096 --mat-z --center 0 0 --y-span 4 -o ${default_hybf_file}
+    COMMAND ${CMAKE_BINARY_DIR}/hybtool/hybtool compute --rows 720 --cols 1080 --maxit 255 --mat-z --center 0 0 --y-span 4 -o ${default_hybf_file}
     DEPENDS hybtool
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
     BYPRODUCTS ${default_hybf_file})
 
 install(FILES ${default_hybf_file}
     DESTINATION bin)
+
+add_dependencies(zoomer hybf-default)
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
     find_program(HYBRACTAL_QT_WINDEPLOYQT_EXE

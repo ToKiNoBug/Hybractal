@@ -78,7 +78,7 @@ private:
   auto operator=(gpu_resource &&) = delete;
 
   uint16_t *device_mat_age{nullptr};
-  std::complex<double> *device_mat_z{nullptr};
+  std::complex<libHybractal::hybf_store_t> *device_mat_z{nullptr};
   fractal_utils::pixel_RGB *device_mat_u8c3{nullptr};
 
 public:
@@ -90,7 +90,7 @@ public:
   inline size_t cols() const noexcept { return this->m_cols; }
 
   inline uint16_t *mat_age_gpu() noexcept { return this->device_mat_age; }
-  inline std::complex<double> *mat_z_gpu() noexcept {
+  inline std::complex<libHybractal::hybf_store_t> *mat_z_gpu() noexcept {
     return this->device_mat_z;
   }
   inline fractal_utils::pixel_RGB *mat_u8c3_gpu() noexcept {

@@ -37,7 +37,8 @@ libHybractal::gpu_resource::gpu_resource(size_t _rows, size_t _cols)
       cudaMalloc(&this->device_mat_age, _rows * _cols * sizeof(uint16_t));
   PRIVATE_HANDLE_ERROR_GPU_RCS(err_code);
   err_code = cudaMalloc(&this->device_mat_z,
-                        _rows * _cols * sizeof(std::complex<double>));
+                        _rows * _cols *
+                            sizeof(std::complex<libHybractal::hybf_store_t>));
   PRIVATE_HANDLE_ERROR_GPU_RCS(err_code);
   err_code =
       cudaMalloc(&this->device_mat_u8c3, _rows * _cols * sizeof(uint8_t[3]));
@@ -221,7 +222,11 @@ libHybractal::render_hsv(const fractal_utils::fractal_map &mat_age,
   err = cudaMemset(rcs.mat_u8c3_gpu(), 0xFF, mat_u8c3.byte_count());
   handle_error(err);
 
-  static_assert(sizeof(cuDoubleComplex) == sizeof(std::complex<double>), "");
+  static_assert(std::is_same_v<libHybractal::hybf_store_t, double>, "");
+
+  static_assert(sizeof(cuDoubleComplex) ==
+                    sizeof(std::complex<libHybractal::hybf_store_t>),
+                "");
   static_assert(sizeof(uchar3) == sizeof(fractal_utils::pixel_RGB), "");
 
   const int blockdim = 64;

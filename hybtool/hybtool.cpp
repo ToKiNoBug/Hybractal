@@ -84,7 +84,7 @@ int main(int argc, char **argv) {
                    "Range of x. Non-positive number means default value.")
       ->default_val(-1);
   compute->add_option("--y-span,--span-y", y_span_f64, "Range of y.")
-      ->default_val(2);
+      ->default_val(4);
   compute->add_option("-o", task_c.filename, "Generated hybf file.")
       ->default_val("out.hybf")
       ->check(is_hybf);

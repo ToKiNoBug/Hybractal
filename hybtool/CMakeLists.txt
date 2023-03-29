@@ -22,6 +22,9 @@ target_link_libraries(hybtool PRIVATE
 
 target_include_directories(hybtool PRIVATE ${CLI11_include_dir})
 
+file(COPY ${CMAKE_SOURCE_DIR}/libRender/render1.json
+    DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+
 install(TARGETS hybtool
     RUNTIME DESTINATION bin
     LIBRARY DESTINATION lib)

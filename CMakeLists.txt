@@ -37,6 +37,10 @@ add_compile_definitions(_USE_MATH_DEFINES)
 add_compile_definitions("HYBRACTAL_VERSION=\"${PROJECT_VERSION}\"")
 add_compile_definitions("HYBRACTAL_FLT_PRECISION=${HYB_float_precision}")
 
+if(${MSVC})
+  add_compile_definitions("_SILENCE_NONFLOATING_COMPLEX_DEPRECATION_WARNING")
+endif()
+
 add_subdirectory(libHybractal)
 add_subdirectory(libRender)
 add_subdirectory(hybtool)
