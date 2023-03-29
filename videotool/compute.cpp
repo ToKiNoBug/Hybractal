@@ -18,14 +18,15 @@ bool run_compute(const common_info &common,
   libHybractal::hybf_archive archive(common.rows, common.cols, true);
 
   archive.metainfo().maxit = common.maxit;
-  archive.metainfo().window_xy_span = {ctask.x_span, ctask.y_span};
+  archive.metainfo().wind.x_span = ctask.x_span;
+  archive.metainfo().wind.y_span = ctask.y_span;
 
   {
     auto bytes = fractal_utils::hex_2_bin(
-        ctask.center_hex, archive.metainfo().window_center.data(),
-        sizeof(archive.metainfo().window_center));
+        ctask.center_hex, archive.metainfo().wind.center.data(),
+        sizeof(archive.metainfo().wind.center));
     if (!bytes.has_value() ||
-        bytes.value() != sizeof(archive.metainfo().window_center)) {
+        bytes.value() != sizeof(archive.metainfo().wind.center)) {
       cerr << fmt::format("Invalid center hex.") << endl;
       return false;
     }
@@ -38,8 +39,8 @@ bool run_compute(const common_info &common,
   for (int fidx : frame_idxs) {
     const double factor = std::pow(common.ratio, -fidx);
 
-    archive.metainfo().window_xy_span[0] = ctask.x_span * factor;
-    archive.metainfo().window_xy_span[1] = ctask.y_span * factor;
+    archive.metainfo().wind.x_span = ctask.x_span * factor;
+    archive.metainfo().wind.y_span = ctask.y_span * factor;
     cout << endl;
     std::string filename = hybf_filename(common, fidx);
     cout << fmt::format("[{:^6.1f}% : {:^3} / {:^3}] : {}",
@@ -96,7 +97,7 @@ bool check_hybf(std::string_view filename, const common_info &ci,
         hybf_archive.metainfo().sequence_len !=
             ::libHybractal::global_sequence_len) {
       cout << fmt::format(
-          "Warning: {} is a hybf file, but the sequence(\{:{}b}) "
+          "Warning: {} is loaded as a hybf file, but the sequence({:{}b}) "
           "mismatch with this program's configuration({}).",
           filename, hybf_archive.metainfo().sequence_bin,
           hybf_archive.metainfo().sequence_len, HYBRACTAL_SEQUENCE_STR);
@@ -106,11 +107,13 @@ bool check_hybf(std::string_view filename, const common_info &ci,
 
   if (!opt.ignore_size) {
     if (!check_hybf_size(hybf_archive, {ci.rows, ci.cols})) {
-      cout << fmt::format("Warning: {} is a hybf file, but the size([{}, {}]) "
-                          "mismatch with task([{}, {}])",
-                          filename, hybf_archive.metainfo().rows,
-                          hybf_archive.metainfo().cols, ci.rows, ci.cols)
-           << endl;
+      cout
+          << fmt::format(
+                 "Warning: {} is loaded as a hybf file, but the size([{}, {}]) "
+                 "mismatch with task([{}, {}])",
+                 filename, hybf_archive.metainfo().rows,
+                 hybf_archive.metainfo().cols, ci.rows, ci.cols)
+          << endl;
       return false;
     }
   }
