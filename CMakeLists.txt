@@ -8,6 +8,7 @@ include(CTest)
 enable_testing()
 
 set(CMAKE_FIND_NO_INSTALL_PREFIX TRUE)
+set(CMAKE_IGNORE_PREFIX_PATH ${CMAKE_INSTALL_PREFIX})
 
 # message(STATUS "CMAKE_CXX_COMPILER = " ${CMAKE_CXX_COMPILER})
 cmake_path(GET CMAKE_CXX_COMPILER PARENT_PATH compiler_path)
@@ -29,7 +30,12 @@ include(${CMAKE_SOURCE_DIR}/cmake/configure_boost_mp.cmake)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ON)
 
-set(HYB_sequence "10000000000000001" CACHE STRING "")
+if(${LINUX})
+  set(CMAKE_INSTALL_RPATH "$ORIGIN/../lib")
+endif()
+
+
+set(HYB_sequence "100000010000011111" CACHE STRING "")
 set(HYB_float_precision 8 CACHE STRING "The bytes of floating point number. Supported values: 1, 2, 4, 8")
 
 add_compile_definitions("HYBRACTAL_SEQUENCE_STR=\"${HYB_sequence}\"")
