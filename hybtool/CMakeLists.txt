@@ -13,7 +13,13 @@ add_executable(hybtool
     render.cpp
     look.cpp)
 
-target_link_libraries(hybtool PRIVATE Hybractal Hybfile Render OpenMP::OpenMP_CXX fractal_utils::png_utils)
+target_link_libraries(hybtool PRIVATE
+    Hybractal
+    Hybfile
+    Render
+    OpenMP::OpenMP_CXX
+    fractal_utils::png_utils)
+
 target_include_directories(hybtool PRIVATE ${CLI11_include_dir})
 
 install(TARGETS hybtool

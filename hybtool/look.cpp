@@ -46,7 +46,7 @@ bool run_look(const task_look &task) noexcept {
     return false;
   }
 
-  if (task.show_blocks) {
+  if (task.show_blocks || task.show_all) {
     cout << "Data blocks: \n";
     size_t idx = 0;
     for (const auto &blk : binfile.blocks) {
@@ -57,7 +57,7 @@ bool run_look(const task_look &task) noexcept {
   }
 
   const auto &metainfo = archive.metainfo();
-  if (task.show_sequence) {
+  if (task.show_sequence || task.show_all) {
     std::string seq_str =
         fmt::format("{:{}b}", metainfo.sequence_bin, metainfo.sequence_len);
     cout << fmt::format("Sequence: sequence = \"{}\", length = {}\n", seq_str,
@@ -65,35 +65,35 @@ bool run_look(const task_look &task) noexcept {
     cout << endl;
   }
 
-  if (task.show_size) {
+  if (task.show_size || task.show_all) {
     cout << fmt::format("Size: rows = {}, cols = {}, pixel num = {}\n",
                         metainfo.rows, metainfo.cols,
                         metainfo.rows * metainfo.cols);
     cout << endl;
   }
 
-  if (task.show_window) {
-    cout << fmt::format("Window: center = {}{:+}i, x_span = {}, y_span = {}\n",
-                        metainfo.window_center[0], metainfo.window_center[1],
-                        metainfo.window_xy_span[0], metainfo.window_xy_span[1]);
+  if (task.show_window || task.show_all) {
+    cout << fmt::format(
+        "Window: center = {}{:+}i, x_span = {}, y_span = {}\n",
+        double(metainfo.wind.center[0]), double(metainfo.wind.center[1]),
+        double(metainfo.wind.x_span), double(metainfo.wind.y_span));
     cout << endl;
   }
 
-  if (task.show_center_hex) {
-    std::string hex;
-    hex.resize(1024);
-
-    const auto size = fractal_utils::bin_2_hex(metainfo.window_center.data(),
-                                               sizeof(metainfo.window_center),
-                                               hex.data(), hex.size(), true);
-    assert(size.has_value());
-    hex.resize(size.value());
-    cout << fmt::format("Center hex: {}, length = {}\n", hex, hex.size());
+  if (task.show_center_hex || task.show_all) {
+    cout << fmt::format("Center hex: {},\n length = {}\n",
+                        metainfo.center_hex(), metainfo.center_hex().size());
     cout << endl;
   }
 
   if (task.show_maxit) {
     cout << fmt::format("Maxit : {}\n", metainfo.maxit);
+    cout << endl;
+  }
+
+  if (task.show_precision || task.show_all) {
+    cout << fmt::format("Floating point precision : {}\n",
+                        metainfo.float_precision);
     cout << endl;
   }
 

@@ -23,13 +23,12 @@ This file is part of Hybractal.
 #include <libHybractal.h>
 
 struct task_compute {
-  libHybractal::hybf_metainfo info;
+  libHybractal::hybf_metainfo_new info;
   std::string filename;
   uint16_t threads{1};
   bool save_mat_z{false};
   void override_x_span() noexcept {
-    this->info.window_xy_span[0] =
-        this->info.window_xy_span[1] * info.cols / info.rows;
+    this->info.wind.x_span = this->info.wind.y_span * info.cols / info.rows;
   }
 
   void override_center(const std::array<uint64_t, 2> &src) noexcept;
@@ -47,12 +46,14 @@ bool run_render(const task_render &task) noexcept;
 
 struct task_look {
   std::string file{""};
+  bool show_all{false};
   bool show_blocks{false};
   bool show_sequence{false};
   bool show_size{false};
   bool show_window{false};
   bool show_center_hex{false};
   bool show_maxit{false};
+  bool show_precision{false};
   std::string extract_age_compressed{""};
   std::string extract_age_decompress{""};
   std::string extract_z_compressed{""};

@@ -25,6 +25,11 @@ This file is part of Hybractal.
 #include "hybtool.h"
 #include <fmt/format.h>
 
+std::array<libHybractal::hybf_float_t, 2>
+parse_center(const CLI::Option *opt_hex, std::string_view hex,
+             const CLI::Option *opt_cf64, const std::array<double, 2> &f64,
+             std::string &err) noexcept;
+
 int main(int argc, char **argv) {
   CLI::App app;
 
@@ -61,10 +66,10 @@ int main(int argc, char **argv) {
 
   std::string center_hex;
 
+  std::array<double, 2> center_f64;
+
   CLI::Option *const opt_center_double =
-      compute
-          ->add_option("--center", task_c.info.window_center,
-                       "Coordinate of center")
+      compute->add_option("--center", center_f64, "Coordinate of center")
           ->expected(0, 1);
   CLI::Option *const opt_center_hex =
       compute
@@ -72,13 +77,13 @@ int main(int argc, char **argv) {
                        "Coordiante of center, but encoded in byte sequence.")
           ->expected(0, 1);
 
+  double x_span_f64{-1}, y_span_f64{-1};
+
   compute
-      ->add_option("--x-span,--span-x", task_c.info.window_xy_span[0],
+      ->add_option("--x-span,--span-x", x_span_f64,
                    "Range of x. Non-positive number means default value.")
       ->default_val(-1);
-  compute
-      ->add_option("--y-span,--span-y", task_c.info.window_xy_span[1],
-                   "Range of y.")
+  compute->add_option("--y-span,--span-y", y_span_f64, "Range of y.")
       ->default_val(2);
   compute->add_option("-o", task_c.filename, "Generated hybf file.")
       ->default_val("out.hybf")
@@ -127,6 +132,9 @@ int main(int argc, char **argv) {
   look->add_option("file", task_l.file, "Files to look.")
       ->required()
       ->check(CLI::ExistingFile & is_hybf);
+
+  look->add_flag("--all", task_l.show_all, "Show all metainfo.")
+      ->default_val(false);
   look->add_flag("--blocks,--blk", task_l.show_blocks, "Show data blocks.")
       ->default_val(false);
   look->add_flag("--sequence,--seq", task_l.show_sequence,
@@ -140,6 +148,9 @@ int main(int argc, char **argv) {
                  "Show center hex.")
       ->default_val(false);
   look->add_flag("--maxit", task_l.show_maxit, "Show maxit.")
+      ->default_val(false);
+  look->add_flag("--float-precsion,--fpp", task_l.show_precision,
+                 "Show floating point precsion when computation.")
       ->default_val(false);
 
   CLI::Validator is_zst{[](std::string &input) -> std::string {
@@ -171,35 +182,27 @@ int main(int argc, char **argv) {
   CLI11_PARSE(app, argc, argv);
 
   if (show_config) {
-    std::cout << fmt::format("Configured with : HYBRACTAL_SEQUENCE_STR = {}",
-                             HYBRACTAL_SEQUENCE_STR)
+    std::cout << fmt::format(
+                     "Configured with : HYBRACTAL_SEQUENCE_STR = {}, "
+                     "floating point precision = {}, sizeof hybf_float_t = {}",
+                     HYBRACTAL_SEQUENCE_STR, HYBRACTAL_FLT_PRECISION,
+                     sizeof(libHybractal::hybf_float_t))
               << std::endl;
   }
 
   if (compute->count() > 0) {
+
+    task_c.info.wind.x_span = x_span_f64;
+    task_c.info.wind.y_span = y_span_f64;
+
     task_c.override_x_span();
+    std::string err;
+    task_c.info.wind.center = parse_center(opt_center_hex, center_hex,
+                                           opt_center_double, center_f64, err);
 
-    if (opt_center_hex->count() > 0) {
-      if (center_hex.size() != 32 && center_hex.size() != 34) {
-        std::cerr
-            << "Invalid value for center_hex, expceted 32 or 34 characters"
-            << std::endl;
-        return 1;
-      }
-
-      auto ret =
-          fractal_utils::hex_2_bin(center_hex, task_c.info.window_center.data(),
-                                   sizeof(task_c.info.window_center));
-      if (!ret.has_value() ||
-          ret.value() != sizeof(task_c.info.window_center)) {
-        std::cerr << "Invalid value for center_hex" << std::endl;
-        return 1;
-      }
-    } else {
-      if (opt_center_double->count() <= 0) {
-        std::cerr << "No value for center" << std::endl;
-        return 1;
-      }
+    if (!err.empty()) {
+      std::cerr << "Failed to parse center. Details: " << err << std::endl;
+      return 1;
     }
 
     if (!run_compute(task_c)) {
@@ -225,4 +228,49 @@ int main(int argc, char **argv) {
   std::cout << "Success" << std::endl;
 
   return 0;
+}
+
+std::array<libHybractal::hybf_float_t, 2>
+parse_center(const CLI::Option *opt_center_hex, std::string_view center_hex,
+             const CLI::Option *opt_center_double,
+             const std::array<double, 2> &center_f64,
+             std::string &err) noexcept {
+  err.clear();
+  std::array<libHybractal::hybf_float_t, 2> result;
+
+  if (opt_center_hex->count() > 0) {
+    // if center hex is assigned, use center hex
+
+    constexpr size_t bytes_center = sizeof(result);
+
+    if (center_hex.size() != bytes_center &&
+        center_hex.size() != (bytes_center + 2)) {
+
+      err = fmt::format(
+          "Invalid value for center_hex, expceted {} or {} characters",
+          bytes_center, bytes_center + 2);
+      return {};
+    }
+
+    auto ret =
+        fractal_utils::hex_2_bin(center_hex, result.data(), sizeof(result));
+    if (!ret.has_value() || ret.value() != sizeof(result)) {
+      err = "Invalid value for center_hex";
+      return {};
+    }
+
+    return result;
+  }
+
+  // center hex is not assigned, use center_f64
+
+  if (opt_center_double->count() <= 0) {
+    err = "No value for center";
+    return {};
+  }
+
+  result[0] = center_f64[0];
+  result[1] = center_f64[1];
+
+  return result;
 }
