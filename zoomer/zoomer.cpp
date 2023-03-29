@@ -66,9 +66,20 @@ int main(int argc, char **argv) {
       ->check(CLI::ExistingFile)
       ->default_val("render1.json");
 
+  int maxit_override{-1};
+
+  capp.add_option("--override-maxit,--omaxit", maxit_override,
+                  "Override the maxit assigned by hybf file. Negative number "
+                  "means no override.")
+      ->default_val(-1);
+
   CLI11_PARSE(capp, argc, argv);
 
   metainfo4gui_s metainfo = get_info_struct(source_file, render_json);
+
+  if (maxit_override > 0) {
+    metainfo.info.maxit = maxit_override;
+  }
 
   QApplication qapp(argc, argv);
 
@@ -133,8 +144,7 @@ void compute_fun(const fractal_utils::wind_base &__wind, void *custom_ptr,
   }
 
   auto *metainfo = reinterpret_cast<metainfo4gui_s *>(custom_ptr);
-  if (false)
-    std::cout << "maxit = " << metainfo->info.maxit << std::endl;
+  if (false) std::cout << "maxit = " << metainfo->info.maxit << std::endl;
 
   libHybractal::compute_frame(wind, metainfo->info.maxit, *map_fractal,
                               &metainfo->mat_z);

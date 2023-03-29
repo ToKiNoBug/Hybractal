@@ -35,7 +35,7 @@ if(${LINUX})
 endif()
 
 
-set(HYB_sequence "100000010000011111" CACHE STRING "")
+set(HYB_sequence "10111011" CACHE STRING "")
 set(HYB_float_precision 8 CACHE STRING "The bytes of floating point number. Supported values: 1, 2, 4, 8")
 
 add_compile_definitions("HYBRACTAL_SEQUENCE_STR=\"${HYB_sequence}\"")
