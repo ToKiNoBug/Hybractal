@@ -42,7 +42,7 @@ bool export_fun(const fractal_utils::fractal_map &map_fractal,
                 const char *filename);
 
 struct metainfo4gui_s {
-  libHybractal::hybf_metainfo info;
+  libHybractal::hybf_metainfo_new info;
   fractal_utils::fractal_map mat_z{0, 0, 16};
 
   libHybractal::gpu_resource gpu_rcs;
@@ -75,7 +75,8 @@ int main(int argc, char **argv) {
   const std::array<int, 2> window_size{(int)metainfo.info.rows,
                                        (int)metainfo.info.cols};
 
-  fractal_utils::mainwindow window(0.0, nullptr, window_size, sizeof(uint16_t));
+  fractal_utils::mainwindow window(libHybractal::hybf_float_t(0.0), nullptr,
+                                   window_size, sizeof(uint16_t));
 
   window.set_window(metainfo.info.window());
   window.display_range();
@@ -112,20 +113,22 @@ metainfo4gui_s get_info_struct(std::string_view filename,
 
   return metainfo4gui_s{
       archive.metainfo(),
-      fractal_utils::fractal_map{archive.rows(), archive.cols(),
-                                 sizeof(std::complex<double>)},
+      fractal_utils::fractal_map{
+          archive.rows(), archive.cols(),
+          sizeof(std::complex<libHybractal::hybf_store_t>)},
       libHybractal::gpu_resource{archive.rows(), archive.cols()},
       renderer.value()};
 }
 
 void compute_fun(const fractal_utils::wind_base &__wind, void *custom_ptr,
                  fractal_utils::fractal_map *map_fractal) {
-  const auto wind =
-      dynamic_cast<const fractal_utils::center_wind<double> &>(__wind);
+  const auto wind = dynamic_cast<
+      const fractal_utils::center_wind<libHybractal::hybf_float_t> &>(__wind);
   if (false) {
     std::cout << fmt::format(
                      "wind : center = [{}, {}], x_span = {}, y_span = {}",
-                     wind.center[0], wind.center[1], wind.x_span, wind.y_span)
+                     double(wind.center[0]), double(wind.center[1]),
+                     double(wind.x_span), double(wind.y_span))
               << std::endl;
   }
 
@@ -160,13 +163,14 @@ bool export_fun(const fractal_utils::fractal_map &map_fractal,
   libHybractal::hybf_archive archive{metainfo->info.rows, metainfo->info.cols,
                                      true};
 
-  const auto wind =
-      dynamic_cast<const fractal_utils::center_wind<double> &>(__wind);
+  const auto wind = dynamic_cast<
+      const fractal_utils::center_wind<libHybractal::hybf_float_t> &>(__wind);
 
   {
     archive.metainfo().maxit = metainfo->info.maxit;
-    archive.metainfo().window_center = wind.center;
-    archive.metainfo().window_xy_span = {wind.x_span, wind.y_span};
+    archive.metainfo().wind.center = wind.center;
+    archive.metainfo().wind.x_span = wind.x_span;
+    archive.metainfo().wind.y_span = wind.y_span;
   }
 
   memcpy(archive.map_age().data, map_fractal.data, map_fractal.byte_count());
