@@ -27,6 +27,7 @@ struct task_compute {
   std::string filename;
   uint16_t threads{1};
   bool save_mat_z{false};
+  bool bechmark{false};
   void override_x_span() noexcept {
     this->info.wind.x_span = this->info.wind.y_span * info.cols / info.rows;
   }
@@ -40,6 +41,7 @@ struct task_render {
   std::string json_file;
   std::string png_file;
   std::string hybf_file;
+  bool bechmark{false};
 };
 
 bool run_render(const task_render &task) noexcept;

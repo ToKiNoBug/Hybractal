@@ -17,6 +17,7 @@ This file is part of Hybractal.
 */
 
 #include "hybtool.h"
+#include <fmt/format.h>
 #include <omp.h>
 
 bool run_compute(const task_compute &task) noexcept {
@@ -28,8 +29,24 @@ bool run_compute(const task_compute &task) noexcept {
   file.metainfo() = task.info;
   fractal_utils::fractal_map mat_age = file.map_age();
   fractal_utils::fractal_map mat_z = file.map_z();
+
+  double wtime;
+  wtime = omp_get_wtime();
   libHybractal::compute_frame(file.metainfo().window(), file.metainfo().maxit,
                               mat_age, file.have_mat_z() ? &mat_z : nullptr);
+  wtime = omp_get_wtime() - wtime;
 
-  return file.save(task.filename);
+  if (task.bechmark) {
+    std::cout << fmt::format("Computation cost {} seconds.\n", wtime);
+  }
+
+  wtime = omp_get_wtime();
+  auto ret = file.save(task.filename);
+  wtime = omp_get_wtime() - wtime;
+
+  if (task.bechmark) {
+    std::cout << fmt::format("Export cost {} seconds.\n", wtime);
+  }
+
+  return ret;
 }

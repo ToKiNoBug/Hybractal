@@ -94,6 +94,10 @@ int main(int argc, char **argv) {
       ->check(CLI::PositiveNumber);
   compute->add_flag("--mat-z", task_c.save_mat_z, "Whether to save z matrix.")
       ->default_val(false);
+  compute
+      ->add_flag("--benchmark,--bench", task_c.bechmark,
+                 "Show time costing for benchmark.")
+      ->default_val(false);
 
   //////////////////////////////////////
 
@@ -124,6 +128,10 @@ int main(int argc, char **argv) {
 
   render->add_option("-o", task_r.png_file, "Generated png file.")
       ->default_val("out.png");
+  render
+      ->add_flag("--benchmark,--bench", task_r.bechmark,
+                 "Show time costing for benchmark.")
+      ->default_val(false);
 
   //////////////////////////////////////
 

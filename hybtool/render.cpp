@@ -17,11 +17,11 @@ This file is part of Hybractal.
 */
 
 #include "hybtool.h"
-#include <iostream>
-#include <png_utils.h>
-
 #include "libRender.h"
 #include <fmt/format.h>
+#include <iostream>
+#include <omp.h>
+#include <png_utils.h>
 
 bool run_render(const task_render &task) noexcept {
   std::string err{""};
@@ -59,15 +59,28 @@ bool run_render(const task_render &task) noexcept {
 
   fractal_utils::fractal_map img_u8c3(src.rows(), src.cols(), 3);
 
+  double wtime;
+  wtime = omp_get_wtime();
   libHybractal::render_hsv(src.map_age(), src.map_z(), img_u8c3,
                            render_opt.value(), gpu_rcs);
+  wtime = omp_get_wtime() - wtime;
 
+  if (task.bechmark) {
+    std::cout << fmt::format("Render cost {} seconds.\n", wtime);
+  }
+
+  wtime = omp_get_wtime();
   const bool ok = fractal_utils::write_png(
       task.png_file.c_str(), fractal_utils::color_space::u8c3, img_u8c3);
+  wtime = omp_get_wtime() - wtime;
 
   if (!ok) {
     std::cout << "Failed to export png" << std::endl;
     return false;
+  }
+
+  if (task.bechmark) {
+    std::cout << fmt::format("Image encoding cost {} seconds.\n", wtime);
   }
 
   return true;
