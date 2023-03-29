@@ -46,7 +46,7 @@ struct hybf_ir_new {
 };
 
 struct hybf_metainfo_new {
- public:
+public:
   uint64_t sequence_bin{::libHybractal::convert_to_bin(HYBRACTAL_SEQUENCE_STR)};
   uint64_t sequence_len{::libHybractal::static_strlen(HYBRACTAL_SEQUENCE_STR)};
   fractal_utils::center_wind<hybf_float_t> wind;
@@ -55,10 +55,10 @@ struct hybf_metainfo_new {
   int maxit{100};
   int16_t float_precision{HYBRACTAL_FLT_PRECISION};
 
- private:
+private:
   std::string chx{};
 
- public:
+public:
   inline const auto &window() const noexcept { return this->wind; }
 
   const auto &center_hex() const noexcept { return this->chx; }
@@ -76,19 +76,19 @@ struct load_options {
 };
 
 class hybf_archive {
- private:
+private:
   hybf_metainfo_new m_info;
   std::vector<uint16_t> data_age;
   std::vector<std::complex<hybf_store_t>> data_z;
 
- public:
+public:
   enum seg_id : int64_t {
     id_metainfo = 666,
     id_mat_age = 114514,
     id_mat_z = 1919810,
   };
 
- public:
+public:
   hybf_archive() : hybf_archive(0, 0, false) {}
   explicit hybf_archive(size_t rows, size_t cols, bool have_z);
   auto &metainfo() noexcept { return this->m_info; }
@@ -114,11 +114,12 @@ class hybf_archive {
   fractal_utils::fractal_map map_z() noexcept {
     if (this->have_mat_z()) {
       return fractal_utils::fractal_map{this->rows(), this->cols(),
-                                        sizeof(std::complex<hybf_float_t>),
+                                        sizeof(std::complex<hybf_store_t>),
                                         this->data_z.data()};
     }
 
-    return fractal_utils::fractal_map{0, 0, 16, nullptr};
+    return fractal_utils::fractal_map{0, 0, sizeof(std::complex<hybf_store_t>),
+                                      nullptr};
   }
 
   static hybf_archive load(std::string_view filename, std::string *err,
@@ -142,6 +143,6 @@ std::vector<uint8_t> compress(const void *src, size_t bytes) noexcept;
 void decompress(const void *src, size_t src_bytes,
                 std::vector<uint8_t> &dest) noexcept;
 
-}  // namespace libHybractal
+} // namespace libHybractal
 
-#endif  // HYBRACTAL_LIBHYBFILE_H
+#endif // HYBRACTAL_LIBHYBFILE_H

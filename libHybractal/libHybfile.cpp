@@ -171,22 +171,25 @@ libHybractal::hybf_metainfo_new::parse_metainfo(const void *src, size_t bytes,
       beg += 2;
     }
 
-    const size_t offset = float_bytes(ir.float_t_prec);
+    const size_t offset_bytes = float_bytes(ir.float_t_prec);
+    const size_t offset_chars = offset_bytes * 2;
 
     const size_t len = strlen(beg);
-    if (len != offset * 2 * 2) {
+    if (len != offset_chars * 2) {
       err = fmt::format(
           "Length of center_hex is invalid. center_hex = \"{}\", length = {}, "
           "but expected {} bytes.",
-          ir.center_hex, len, offset * 2);
+          ir.center_hex, len, offset_chars);
       return {};
     }
 
     std::string err_cvt[2];
 
-    ret.wind.center[0] = any_type_to_compute_t(beg, beg + offset, err_cvt[0]);
-    beg += offset;
-    ret.wind.center[1] = any_type_to_compute_t(beg, beg + offset, err_cvt[1]);
+    ret.wind.center[0] =
+        any_type_to_compute_t(beg, beg + offset_chars, err_cvt[0]);
+    beg += offset_chars;
+    ret.wind.center[1] =
+        any_type_to_compute_t(beg, beg + offset_chars, err_cvt[1]);
 
     if (!err_cvt[0].empty() || !err_cvt[1].empty()) {
       err = fmt::format(
