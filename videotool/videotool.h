@@ -48,6 +48,7 @@ struct video_task {
   video_config itermediate_config;
   video_config product_config;
   std::string product_name;
+  std::string ffmpeg_exe;
   int threads;
 };
 

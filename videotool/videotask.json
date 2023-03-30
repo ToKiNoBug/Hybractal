@@ -12,6 +12,7 @@
     "compute": {
         "centerhex": "0x8d9aef6df402d03fafb69a745266eabf",
         "y-span": 4,
+        // x-span is optional
         "threads": 20
     },
     "render": {
@@ -21,17 +22,18 @@
         "threads": 20
     },
     "makevideo": {
+        "ffmpeg-exe": "ffmpeg", //optional
         "itermediate-config": {
-            "extension": ".mp4",
-            "encoder": "libx265",
-            "encoder-flags": "-crf 18"
+            "extension": ".mp4", //optional
+            "encoder": "libx265", //optional
+            "encoder-flags": "-crf 18" //optional, default ""
         },
         "product-config": {
-            "extension": ".mp4",
-            "encoder": "libx265",
-            "encoder-flags": "-crf 28"
+            "extension": ".mp4", //optional
+            "encoder": "libx265", //optional
+            "encoder-flags": "-crf 28" //optional
         },
         "product-name": "product",
-        "threads": 4
+        "threads": 4 //optional
     }
 }

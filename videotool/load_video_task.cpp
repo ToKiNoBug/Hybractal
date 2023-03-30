@@ -141,6 +141,12 @@ render_task parse_render(const njson &jo) noexcept(false) {
         fmt::format("extra-png-num = {}", ret.extra_png_num)};
   }
 
+  if (ret.extra_png_num >= ret.png_per_frame) {
+    throw std::runtime_error{
+        fmt::format("extra-png-num({}) should be less than png-per-frame({})",
+                    ret.extra_png_num, ret.png_per_frame)};
+  }
+
   return ret;
 }
 
@@ -190,6 +196,12 @@ video_task parse_videotask(const njson &jo) noexcept(false) {
   if (ret.threads <= 0) {
     throw std::runtime_error{fmt::format(
         "video task threads must be positive, but met {}", ret.threads)};
+  }
+
+  if (jo.contains("ffmpeg-exe")) {
+    ret.ffmpeg_exe = jo.at("ffmpeg-exe");
+  } else {
+    ret.ffmpeg_exe = "ffmpeg";
   }
 
   return ret;
