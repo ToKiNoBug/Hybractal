@@ -1,18 +1,21 @@
-#include "videotool.h"
 #include <fmt/format.h>
-#include <fstream>
 #include <hex_convert.h>
-#include <iostream>
 #include <libHybractal.h>
+
+#include <fstream>
+#include <iostream>
 #include <nlohmann/json.hpp>
 
+#include "videotool.h"
+
 std::string hybf_filename(const common_info &ci, int frameidx) noexcept {
-  return fmt::format("{}frame{}.hybf", ci.hybf_prefix, frameidx);
+  return fmt::format("{}frame{:06}.hybf", ci.hybf_prefix, frameidx);
 }
 
 std::string png_filename(const common_info &ci, int frameidx,
                          int pngidx) noexcept {
-  return fmt::format("{}frame{}-png{}.png", ci.png_prefix, frameidx, pngidx);
+  return fmt::format("{}frame{:06}-png{:06}.png", ci.png_prefix, frameidx,
+                     pngidx);
 }
 
 using njson = nlohmann::json;
@@ -20,10 +23,10 @@ using njson = nlohmann::json;
 common_info parse_common(const njson &) noexcept(false);
 compute_task parse_compute(const njson &) noexcept(false);
 render_task parse_render(const njson &) noexcept(false);
-video_task parse_videotask(const njson &) noexcept(false);
+full_task parse_videotask(const njson &) noexcept(false);
 
-std::optional<video_task> load_video_task(std::string_view filename) noexcept {
-  video_task ret;
+std::optional<full_task> load_task(std::string_view filename) noexcept {
+  full_task ret;
   try {
     std::ifstream ifs(filename.data());
     njson jo = njson::parse(ifs, nullptr, true, true);
@@ -139,9 +142,8 @@ render_task parse_render(const njson &jo) noexcept(false) {
   return ret;
 }
 
-video_task parse_videotask(const njson &jo) noexcept(false) {
-
-  video_task task;
+full_task parse_videotask(const njson &jo) noexcept(false) {
+  full_task task;
 
   try {
     task.common = parse_common(jo.at("common"));

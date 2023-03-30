@@ -3,9 +3,10 @@
 
 #include <fractal_map.h>
 #include <libHybfile.h>
-#include <optional>
 #include <stddef.h>
 #include <stdint.h>
+
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -37,13 +38,13 @@ struct render_task {
   int threads;
 };
 
-struct video_task {
+struct full_task {
   common_info common;
   compute_task compute;
   render_task render;
 };
 
-std::optional<video_task> load_video_task(std::string_view filename) noexcept;
+std::optional<full_task> load_task(std::string_view filename) noexcept;
 
 struct check_hybf_option {
   bool nocheck_sequence{false};
@@ -61,4 +62,4 @@ bool check_hybf_size(const libHybractal::hybf_archive &,
 bool run_compute(const common_info &common, const compute_task &ctask) noexcept;
 bool run_render(const common_info &ci, const render_task &rt) noexcept;
 
-#endif // HYBRACTAL_VIDEOTOOL_VIDEOTOOL_H
+#endif  // HYBRACTAL_VIDEOTOOL_VIDEOTOOL_H

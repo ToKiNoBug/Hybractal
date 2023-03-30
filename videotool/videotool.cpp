@@ -1,7 +1,7 @@
-#include "videotool.h"
-
 #include <CLI11.hpp>
 #include <iostream>
+
+#include "videotool.h"
 
 int main(int argc, char **argv) {
   CLI::App app;
@@ -26,29 +26,29 @@ int main(int argc, char **argv) {
 
   CLI11_PARSE(app, argc, argv);
 
-  auto taskv_opt = load_video_task(taskfile);
+  auto taskf_opt = load_task(taskfile);
 
-  if (!taskv_opt.has_value()) {
+  if (!taskf_opt.has_value()) {
     std::cerr << "Failed to load " << taskfile << std::endl;
     return 1;
   }
 
-  auto &taskv = taskv_opt.value();
+  auto &taskf = taskf_opt.value();
 
-  if (taskv.compute.x_span <= 0) {
-    taskv.compute.x_span =
-        taskv.compute.y_span * taskv.common.rows / taskv.common.cols;
+  if (taskf.compute.x_span <= 0) {
+    taskf.compute.x_span =
+        taskf.compute.y_span * taskf.common.rows / taskf.common.cols;
   }
 
   if (compute->count() > 0) {
-    if (!run_compute(taskv.common, taskv.compute)) {
+    if (!run_compute(taskf.common, taskf.compute)) {
       std::cout << "Computation terminated with error." << std::endl;
       return 1;
     }
   }
 
   if (render->count() > 0) {
-    if (!run_render(taskv.common, taskv.render)) {
+    if (!run_render(taskf.common, taskf.render)) {
       std::cout << "Renderr terminated with error." << std::endl;
       return 1;
     }
