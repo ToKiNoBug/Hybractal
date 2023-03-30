@@ -23,14 +23,16 @@ using njson = nlohmann::json;
 common_info parse_common(const njson &) noexcept(false);
 compute_task parse_compute(const njson &) noexcept(false);
 render_task parse_render(const njson &) noexcept(false);
-full_task parse_videotask(const njson &) noexcept(false);
+video_task parse_videotask(const njson &) noexcept(false);
+
+full_task parse_fulltask(const njson &) noexcept(false);
 
 std::optional<full_task> load_task(std::string_view filename) noexcept {
   full_task ret;
   try {
     std::ifstream ifs(filename.data());
     njson jo = njson::parse(ifs, nullptr, true, true);
-    ret = parse_videotask(jo);
+    ret = parse_fulltask(jo);
   } catch (std::exception &e) {
     std::cerr << fmt::format("Failed to parse {}, detail: {}", filename,
                              e.what())
@@ -142,7 +144,58 @@ render_task parse_render(const njson &jo) noexcept(false) {
   return ret;
 }
 
-full_task parse_videotask(const njson &jo) noexcept(false) {
+video_task::video_config parse_videotask_video_config(const njson &jo) noexcept(
+    false) {
+  video_task::video_config ret;
+  if (jo.contains("encoder")) {
+    ret.encoder = jo.at("encoder");
+  } else {
+    ret.encoder = "libx265";
+  }
+
+  if (jo.contains("extension")) {
+    ret.encoder = jo.at("extension");
+  } else {
+    ret.encoder = ".mp4";
+  }
+
+  if (jo.contains("encoder-flags")) {
+    ret.encoder_flags = jo.at("encoder-flags");
+  } else {
+    ret.encoder_flags = "";
+  }
+
+  if (!ret.extension.starts_with(".")) {
+    throw std::runtime_error{
+        fmt::format("extension of video must start with \".\", but met \"{}\"",
+                    ret.extension)};
+  }
+
+  return ret;
+}
+
+video_task parse_videotask(const njson &jo) noexcept(false) {
+  video_task ret;
+  ret.itermediate_config =
+      parse_videotask_video_config(jo.at("itermediate-config"));
+  ret.product_config = parse_videotask_video_config(jo.at("product-config"));
+  ret.product_name = jo.at("product-name");
+
+  if (jo.contains("threads")) {
+    ret.threads = jo.at("threads");
+  } else {
+    ret.threads = 2;
+  }
+
+  if (ret.threads <= 0) {
+    throw std::runtime_error{fmt::format(
+        "video task threads must be positive, but met {}", ret.threads)};
+  }
+
+  return ret;
+}
+
+full_task parse_fulltask(const njson &jo) noexcept(false) {
   full_task task;
 
   try {
@@ -164,6 +217,13 @@ full_task parse_videotask(const njson &jo) noexcept(false) {
   } catch (std::exception &e) {
     throw std::runtime_error{
         fmt::format("Failed to parse render. Detail: {}", e.what())};
+  }
+
+  try {
+    task.video = parse_videotask(jo.at("makevideo"));
+  } catch (std::exception &e) {
+    throw std::runtime_error{
+        fmt::format("Failed to parse video task. Detail: {}", e.what())};
   }
 
   return task;

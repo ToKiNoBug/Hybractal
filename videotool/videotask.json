@@ -4,6 +4,7 @@
         "cols": 1920,
         "hybf-prefix": "./compute/",
         "png-prefix": "./png/",
+        "video-prefix": "./video/",
         "maxit": 4096,
         "frame-num": 14,
         "ratio": 2
@@ -18,5 +19,19 @@
         "extra-png-num": 4,
         "config-file": "render1.json",
         "threads": 20
+    },
+    "makevideo": {
+        "itermediate-config": {
+            "extension": ".mp4",
+            "encoder": "libx265",
+            "encoder-flags": "-crf 18"
+        },
+        "product-config": {
+            "extension": ".mp4",
+            "encoder": "libx265",
+            "encoder-flags": "-crf 28"
+        },
+        "product-name": "product",
+        "threads": 4
     }
 }

@@ -38,10 +38,24 @@ struct render_task {
   int threads;
 };
 
+struct video_task {
+  struct video_config {
+    std::string extension;
+    std::string encoder;
+    std::string encoder_flags;
+  };
+
+  video_config itermediate_config;
+  video_config product_config;
+  std::string product_name;
+  int threads;
+};
+
 struct full_task {
   common_info common;
   compute_task compute;
   render_task render;
+  video_task video;
 };
 
 std::optional<full_task> load_task(std::string_view filename) noexcept;
