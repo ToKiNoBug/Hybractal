@@ -18,6 +18,12 @@ std::string png_filename(const common_info &ci, int frameidx,
                      pngidx);
 }
 
+std::string png_filename_expression(const common_info &ci,
+                                    int frame_idx) noexcept {
+  return fmt::format("{}frame{:06}-png{}.png", ci.png_prefix, frame_idx,
+                     "%06d");
+}
+
 using njson = nlohmann::json;
 
 common_info parse_common(const njson &) noexcept(false);
@@ -55,6 +61,12 @@ common_info parse_common(const njson &jo) noexcept(false) {
     ret.png_prefix = jo.at("png-prefix");
   } else {
     ret.png_prefix = "";
+  }
+
+  if (jo.contains("video-prefix")) {
+    ret.video_prefix = jo.at("video-prefix");
+  } else {
+    ret.video_prefix = "";
   }
 
   ret.rows = jo.at("rows");
@@ -160,9 +172,9 @@ video_task::video_config parse_videotask_video_config(const njson &jo) noexcept(
   }
 
   if (jo.contains("extension")) {
-    ret.encoder = jo.at("extension");
+    ret.extension = jo.at("extension");
   } else {
-    ret.encoder = ".mp4";
+    ret.extension = ".mp4";
   }
 
   if (jo.contains("encoder-flags")) {
@@ -171,7 +183,7 @@ video_task::video_config parse_videotask_video_config(const njson &jo) noexcept(
     ret.encoder_flags = "";
   }
 
-  if (!ret.extension.starts_with(".")) {
+  if (!ret.extension.starts_with('.')) {
     throw std::runtime_error{
         fmt::format("extension of video must start with \".\", but met \"{}\"",
                     ret.extension)};

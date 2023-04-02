@@ -11,7 +11,8 @@ add_executable(videotool
     videotool.cpp
     load_video_task.cpp
     compute.cpp
-    render.cpp)
+    render.cpp
+    makevideo.cpp)
 
 target_link_libraries(videotool PRIVATE Hybractal Hybfile Render)
 target_include_directories(videotool PRIVATE ${CLI11_include_dir} ${njson_include_dir})

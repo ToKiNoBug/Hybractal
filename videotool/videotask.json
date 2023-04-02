@@ -2,9 +2,9 @@
     "common": {
         "rows": 1080,
         "cols": 1920,
-        "hybf-prefix": "./compute/",
-        "png-prefix": "./png/",
-        "video-prefix": "./video/",
+        "hybf-prefix": "./compute/", //optional
+        "png-prefix": "./png/", //optional
+        "video-prefix": "./video/", //optional
         "maxit": 4096,
         "frame-num": 14,
         "ratio": 2
@@ -25,13 +25,13 @@
         "ffmpeg-exe": "ffmpeg", //optional
         "itermediate-config": {
             "extension": ".mp4", //optional
-            "encoder": "libx265", //optional
-            "encoder-flags": "-crf 18" //optional, default ""
+            "encoder": "libx264", //optional
+            "encoder-flags": "-crf 10" //optional, default ""
         },
         "product-config": {
             "extension": ".mp4", //optional
             "encoder": "libx265", //optional
-            "encoder-flags": "-crf 28" //optional
+            "encoder-flags": "-crf 18" //optional
         },
         "product-name": "product",
         "threads": 4 //optional

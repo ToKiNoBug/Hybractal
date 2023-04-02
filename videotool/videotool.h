@@ -15,14 +15,19 @@ struct common_info {
   size_t cols;
   std::string hybf_prefix;
   std::string png_prefix;
+  std::string video_prefix;
   int maxit;
   int frame_num;
   double ratio;
 };
 
+std::array<int, 2> video_size(const common_info &ci) noexcept;
+
 std::string hybf_filename(const common_info &ci, int frameidx) noexcept;
 std::string png_filename(const common_info &ci, int frameidx,
                          int pngidx) noexcept;
+std::string png_filename_expression(const common_info &ci,
+                                    int frame_idx) noexcept;
 
 struct compute_task {
   std::string center_hex;
@@ -76,5 +81,8 @@ bool check_hybf_size(const libHybractal::hybf_archive &,
 
 bool run_compute(const common_info &common, const compute_task &ctask) noexcept;
 bool run_render(const common_info &ci, const render_task &rt) noexcept;
+
+bool run_makevideo(const common_info &ci, const render_task &rt,
+                   const video_task &vt, bool dry_run) noexcept;
 
 #endif  // HYBRACTAL_VIDEOTOOL_VIDEOTOOL_H

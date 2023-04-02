@@ -18,6 +18,10 @@ unset(compiler_path)
 
 set(HYB_fractal_utils_ver 2.2.0)
 
+message(STATUS "Before include: CMAKE_INSTALL_PREFIX = ${CMAKE_INSTALL_PREFIX}")
+#set(HYB_INSTALL_PREFIX_archive ${CMAKE_INSTALL_PREFIX})
+#set(CMAKE_INSTALL_PREFIX ${HYB_INSTALL_PREFIX_archive}/3rdParty)
+
 include(${CMAKE_SOURCE_DIR}/cmake/configure_fractal_utils.cmake)
 include(${CMAKE_SOURCE_DIR}/cmake/configure_cli11.cmake)
 include(${CMAKE_SOURCE_DIR}/cmake/configure_fmtlib.cmake)
@@ -26,6 +30,9 @@ include(${CMAKE_SOURCE_DIR}/cmake/configure_yalantinglibs.cmake)
 include(${CMAKE_SOURCE_DIR}/cmake/configure_nlohmann_json.cmake)
 include(${CMAKE_SOURCE_DIR}/cmake/configure_fmtlib.cmake)
 include(${CMAKE_SOURCE_DIR}/cmake/configure_boost_mp.cmake)
+
+#set(CMAKE_INSTALL_PREFIX ${HYB_INSTALL_PREFIX_archive})
+message(STATUS "After include: CMAKE_INSTALL_PREFIX = ${CMAKE_INSTALL_PREFIX}")
 
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ON)

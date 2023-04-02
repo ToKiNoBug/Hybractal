@@ -23,6 +23,11 @@ int main(int argc, char **argv) {
 
   auto compute = app.add_subcommand("compute");
   auto render = app.add_subcommand("render");
+  auto mkvideo = app.add_subcommand("makevideo");
+
+  bool dry_run{false};
+  mkvideo->add_flag("--dry-run", dry_run, "Print commands instead of execute.")
+      ->default_val(false);
 
   CLI11_PARSE(app, argc, argv);
 
@@ -42,14 +47,21 @@ int main(int argc, char **argv) {
 
   if (compute->count() > 0) {
     if (!run_compute(taskf.common, taskf.compute)) {
-      std::cout << "Computation terminated with error." << std::endl;
+      std::cerr << "Computation terminated with error." << std::endl;
       return 1;
     }
   }
 
   if (render->count() > 0) {
     if (!run_render(taskf.common, taskf.render)) {
-      std::cout << "Renderr terminated with error." << std::endl;
+      std::cerr << "Render terminated with error." << std::endl;
+      return 1;
+    }
+  }
+
+  if (mkvideo->count() > 0) {
+    if (!run_makevideo(taskf.common, taskf.render, taskf.video, dry_run)) {
+      std::cerr << "Makevideo terminated with error." << std::endl;
       return 1;
     }
   }
