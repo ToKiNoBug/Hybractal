@@ -12,21 +12,26 @@
 #include <type_traits>
 #include <vector>
 
-template <size_t prec> struct float_prec_to_type {};
+template <size_t prec>
+struct float_prec_to_type {};
 
-template <> struct float_prec_to_type<1> {
+template <>
+struct float_prec_to_type<1> {
   using type = float;
 };
 
-template <> struct float_prec_to_type<2> {
+template <>
+struct float_prec_to_type<2> {
   using type = double;
 };
 
-template <> struct float_prec_to_type<4> {
+template <>
+struct float_prec_to_type<4> {
   using type = boost::multiprecision::cpp_bin_float_quad;
 };
 
-template <> struct float_prec_to_type<8> {
+template <>
+struct float_prec_to_type<8> {
   using type = boost::multiprecision::cpp_bin_float_oct;
 };
 
@@ -38,10 +43,45 @@ using float_by_prec_t = typename float_prec_to_type<prec>::type;
 
 namespace libHybractal {
 
+namespace internal {
+constexpr int highest_positive_bit(uint64_t val) noexcept {
+  int result = 0;
+  while (true) {
+    if (val == 0) {
+      return result;
+    }
+    val = val >> 1;
+    result++;
+  }
+}
+}  // namespace internal
+
 using hybf_float_t = float_by_prec_t<HYBRACTAL_FLT_PRECISION>;
 using hybf_store_t = double;
 
 constexpr size_t compute_t_size_v = sizeof(std::complex<hybf_float_t>);
+
+template <typename flt_t, typename int_t, int precision>
+void encode_float_with_given_precision(const flt_t &f, void *dst) noexcept {
+#warning here
+}
+
+template <typename flt_t>
+size_t float_decode(const flt_t &f, void *dst) noexcept {
+  constexpr bool is_trivial = std::is_trivial_v<flt_t>;
+
+  if constexpr (is_trivial) {
+    memcpy(dst, &f, sizeof(flt_t));
+    return sizeof(flt_t);
+  }
+
+  if constexpr (!is_trivial) {
+    boost::multiprecision::uint128_t f128;
+#warning here
+  }
+
+  return SIZE_MAX;
+}
 
 template <typename src_t, typename dst_t = hybf_float_t>
 inline dst_t float_type_cvt(const src_t &src) noexcept {
@@ -76,16 +116,16 @@ inline dst_t float_type_cvt(const src_t &src) noexcept {
 
 constexpr size_t float_bytes(int precision) noexcept {
   switch (precision) {
-  case 1:
-    return sizeof(float_by_prec_t<1>);
-  case 2:
-    return sizeof(float_by_prec_t<2>);
-  case 4:
-    return sizeof(float_by_prec_t<4>);
-  case 8:
-    return sizeof(float_by_prec_t<8>);
-  default:
-    return SIZE_MAX;
+    case 1:
+      return sizeof(float_by_prec_t<1>);
+    case 2:
+      return sizeof(float_by_prec_t<2>);
+    case 4:
+      return sizeof(float_by_prec_t<4>);
+    case 8:
+      return sizeof(float_by_prec_t<8>);
+    default:
+      return SIZE_MAX;
   }
 }
 #if false
@@ -150,13 +190,13 @@ hybf_float_t any_type_to_compute_t(const char *beg, const char *end,
 static constexpr uint16_t maxit_max = UINT16_MAX - 1;
 
 template <typename float_t>
-inline std::complex<float_t>
-iterate_mandelbrot(std::complex<float_t> z,
-                   const std::complex<float_t> &C) noexcept {
+inline std::complex<float_t> iterate_mandelbrot(
+    std::complex<float_t> z, const std::complex<float_t> &C) noexcept {
   return z * z + C;
 }
 
-template <typename flt_t> inline auto abs(flt_t val) {
+template <typename flt_t>
+inline auto abs(flt_t val) {
   if (val >= 0) {
     return val;
   }
@@ -164,9 +204,8 @@ template <typename flt_t> inline auto abs(flt_t val) {
 }
 
 template <typename float_t>
-inline std::complex<float_t>
-iterate_burningship(std::complex<float_t> z,
-                    const std::complex<float_t> &C) noexcept {
+inline std::complex<float_t> iterate_burningship(
+    std::complex<float_t> z, const std::complex<float_t> &C) noexcept {
   z.real(abs(z.real()));
   z.imag(abs(z.imag()));
 
@@ -188,7 +227,8 @@ inline bool is_norm2_over_4(const std::complex<float_t> &z) noexcept {
   return (z.real() * z.real() + z.imag() * z.imag()) >= 4;
 }
 
-template <size_t N> using const_str = char[N];
+template <size_t N>
+using const_str = char[N];
 
 template <size_t N>
 constexpr bool is_valid_string(const const_str<N> &str) noexcept {
@@ -201,7 +241,8 @@ constexpr bool is_valid_string(const const_str<N> &str) noexcept {
   return true;
 }
 
-template <uint64_t bin, size_t len> struct sequence {
+template <uint64_t bin, size_t len>
+struct sequence {
   static constexpr uint64_t binary = bin;
   static constexpr size_t length = len;
 
@@ -312,15 +353,15 @@ constexpr uint64_t static_strlen(const const_str<N> &str) noexcept {
   return N - 1;
 }
 
-#define DECLARE_HYBRACTAL_SEQUENCE(str)                                        \
-  ::libHybractal::template sequence<::libHybractal::convert_to_bin(str),       \
+#define DECLARE_HYBRACTAL_SEQUENCE(str)                                  \
+  ::libHybractal::template sequence<::libHybractal::convert_to_bin(str), \
                                     ::libHybractal::static_strlen(str)>
 
 constexpr uint64_t global_sequence_bin =
     ::libHybractal::convert_to_bin(HYBRACTAL_SEQUENCE_STR);
 constexpr uint64_t global_sequence_len =
     ::libHybractal::static_strlen(HYBRACTAL_SEQUENCE_STR);
-} // namespace libHybractal
+}  // namespace libHybractal
 
 #include <fractal_map.h>
 
@@ -330,6 +371,6 @@ void compute_frame(const fractal_utils::center_wind<hybf_float_t> &wind_C,
                    fractal_utils::fractal_map &map_age_u16,
                    fractal_utils::fractal_map *map_z_nullable) noexcept;
 
-} // namespace libHybractal
+}  // namespace libHybractal
 
-#endif // HYBRACTAL_LIBHYBRACTAL_H
+#endif  // HYBRACTAL_LIBHYBRACTAL_H
