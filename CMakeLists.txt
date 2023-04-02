@@ -16,7 +16,7 @@ cmake_path(GET compiler_path PARENT_PATH compiler_path)
 list(APPEND CMAKE_PREFIX_PATH ${compiler_path})
 unset(compiler_path)
 
-set(HYB_fractal_utils_ver 2.2.0)
+set(HYB_fractal_utils_ver 2.2.1)
 
 message(STATUS "Before include: CMAKE_INSTALL_PREFIX = ${CMAKE_INSTALL_PREFIX}")
 #set(HYB_INSTALL_PREFIX_archive ${CMAKE_INSTALL_PREFIX})
@@ -55,6 +55,7 @@ if(${MSVC})
 endif()
 
 add_subdirectory(libHybractal)
+add_subdirectory(centerhexcvt)
 add_subdirectory(libRender)
 add_subdirectory(hybtool)
 add_subdirectory(zoomer)

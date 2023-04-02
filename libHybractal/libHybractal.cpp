@@ -20,16 +20,17 @@ libHybractal::hybf_float_t convert(const void *src) noexcept {
     return convert<float_by_prec_t<(precision)>>((buffer));    \
   }
 
-libHybractal::hybf_float_t libHybractal::any_type_to_compute_t(
-    const char *beg, const char *end, std::string &err,
-    bool *is_same_type) noexcept {
+std::variant<float_by_prec_t<1>, float_by_prec_t<2>, float_by_prec_t<4>,
+             float_by_prec_t<8>>
+libHybractal::hex_to_float(const char *beg, const char *end,
+                           std::string &err) noexcept {
   err.clear();
   if (std::string_view{beg, end}.starts_with("0x")) {
     beg += 2;
   }
   std::string_view hex{beg, end};
 
-  uint8_t buffer[32];
+  uint8_t buffer[4096];
   memset(buffer, 0, sizeof(buffer));
 
   auto bytes = fractal_utils::hex_2_bin(hex, buffer, sizeof(buffer));
@@ -38,14 +39,10 @@ libHybractal::hybf_float_t libHybractal::any_type_to_compute_t(
     err = fmt::format(
         "Failed to decode hex to binary. The hex string is \"{}\", length = {}",
         hex, hex.length());
-    return 0;
+    return NAN;
   }
 
   const size_t size = bytes.value();
-
-  if (is_same_type != nullptr) {
-    *is_same_type = (size == sizeof(hybf_float_t));
-  }
 
   HYBRACTAL_PRIVATE_MATCH_TYPE(1, buffer, size);
   HYBRACTAL_PRIVATE_MATCH_TYPE(2, buffer, size);
@@ -55,7 +52,35 @@ libHybractal::hybf_float_t libHybractal::any_type_to_compute_t(
   err = fmt::format(
       "Invalid floating point bytes({}), the related hex string is \"{}\"",
       size, hex);
-  return 0;
+  return NAN;
+}
+
+#define HYBRACTAL_PRIVATE_TO_HYBF_FLOAT_T(precision, variant)           \
+  if (std::get_if<float_by_prec_t<(precision)>>(&variant) != nullptr) { \
+    return libHybractal::float_type_cvt<float_by_prec_t<(precision)>,   \
+                                        libHybractal::hybf_float_t>(    \
+        std::get<float_by_prec_t<(precision)>>(variant));               \
+  }
+
+libHybractal::hybf_float_t libHybractal::any_type_to_compute_t(
+    const char *beg, const char *end, std::string &err,
+    bool *is_same_type) noexcept {
+  err.clear();
+
+  auto variant = hex_to_float(beg, end, err);
+
+  if (!err.empty()) {
+    return NAN;
+  }
+
+  HYBRACTAL_PRIVATE_TO_HYBF_FLOAT_T(1, variant);
+  HYBRACTAL_PRIVATE_TO_HYBF_FLOAT_T(2, variant);
+  HYBRACTAL_PRIVATE_TO_HYBF_FLOAT_T(4, variant);
+  HYBRACTAL_PRIVATE_TO_HYBF_FLOAT_T(8, variant);
+
+  err = "Impossible precision";
+
+  return NAN;
 }
 
 void libHybractal::compute_frame(
