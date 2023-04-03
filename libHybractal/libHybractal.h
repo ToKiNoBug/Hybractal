@@ -19,25 +19,32 @@ struct float_prec_to_type {};
 template <>
 struct float_prec_to_type<1> {
   using type = float;
+  using uint_type = uint32_t;
 };
 
 template <>
 struct float_prec_to_type<2> {
   using type = double;
+  using uint_type = uint64_t;
 };
 
 template <>
 struct float_prec_to_type<4> {
   using type = boost::multiprecision::cpp_bin_float_quad;
+  using uint_type = boost::multiprecision::uint128_t;
 };
 
 template <>
 struct float_prec_to_type<8> {
   using type = boost::multiprecision::cpp_bin_float_oct;
+  using uint_type = boost::multiprecision::uint256_t;
 };
 
 template <size_t prec>
 using float_by_prec_t = typename float_prec_to_type<prec>::type;
+
+template <size_t prec>
+using uint_by_prec_t = typename float_prec_to_type<prec>::uint_type;
 
 // template <size_t prec>
 // constexpr size_t float_encoded_bytes = prec * sizeof(float);
@@ -94,60 +101,6 @@ constexpr size_t float_bytes(int precision) noexcept {
       return SIZE_MAX;
   }
 }
-#if false
-template <typename flt_t>
-size_t encode_to_binary(const flt_t &flt, void *dst) noexcept {
-
-  if constexpr (!std::is_trivial_v<flt_t>) {
-    constexpr bool is_boost_quad =
-        std::is_same_v<flt_t, boost::multiprecision::cpp_bin_float_quad>;
-    constexpr bool is_boost_oct =
-        std::is_same_v<flt_t, boost::multiprecision::cpp_bin_float_oct>;
-
-    static_assert((is_boost_oct || is_boost_quad),
-                  "No rule to encode floating point");
-
-    if constexpr (is_boost_quad) {
-      auto str = flt.str(256, std::ios::binary);
-      memcpy(dst, str.c_str(), str.size());
-      return str.size();
-    }
-
-    if constexpr (is_boost_oct) {
-      auto str = flt.str(256, std::ios::binary);
-      memcpy(dst, str.c_str(), str.size());
-      return str.size();
-    }
-  }
-
-  memcpy(dst, &flt, sizeof(flt));
-  return sizeof(flt);
-}
-
-template <typename flt_t>
-flt_t decode_from_binary(const void *src, size_t bytes,
-                         std::string &err) noexcept {
-  if constexpr (std::is_trivial_v<flt_t>) {
-    assert(bytes == sizeof(flt_t));
-    flt_t val;
-    memcpy(&val, src, sizeof(val));
-    return val;
-  }
-
-  if constexpr (!std::is_trivial_v<flt_t>) {
-    constexpr bool is_boost_quad =
-        std::is_same_v<flt_t, boost::multiprecision::cpp_bin_float_quad>;
-    constexpr bool is_boost_oct =
-        std::is_same_v<flt_t, boost::multiprecision::cpp_bin_float_oct>;
-
-    static_assert((is_boost_oct || is_boost_quad),
-                  "No rule to encode floating point");
-
-    flt_t val(src);
-    return val;
-  }
-}
-#endif
 
 using float_variant_t = std::variant<float_by_prec_t<1>, float_by_prec_t<2>,
                                      float_by_prec_t<4>, float_by_prec_t<8>>;

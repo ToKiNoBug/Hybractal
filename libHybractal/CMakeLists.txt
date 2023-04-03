@@ -36,7 +36,7 @@ find_package(zstd 1.5.2 REQUIRED)
 find_package(fmtlib REQUIRED)
 find_package(yalantinglibs REQUIRED)
 
-add_library(Hybfile STATIC libHybfile.h libHybfile.cpp)
+add_library(Hybfile STATIC libHybfile.h libHybfile.cpp float_encode.hpp)
 target_compile_features(Hybfile PUBLIC cxx_std_20)
 target_include_directories(Hybfile INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(Hybfile PUBLIC
@@ -63,3 +63,7 @@ target_link_libraries(test_floats PRIVATE Boost::multiprecision Hybractal)
 install(TARGETS Hybractal Hybfile
   RUNTIME DESTINATION bin
   LIBRARY DESTINATION lib)
+
+add_test(NAME test_floats 
+  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+  COMMAND ./test_floats)
