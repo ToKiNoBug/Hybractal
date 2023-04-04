@@ -5,9 +5,9 @@
 #include <CLI11.hpp>
 
 std::string parse_input(std::string_view, int precision, bool format_as_hex,
-                        std::string& err) noexcept;
+                        std::string &err) noexcept;
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   CLI::App app;
   std::string input_hex;
   app.add_option("input", input_hex)->required();
@@ -39,15 +39,15 @@ int main(int argc, char** argv) {
   return 0;
 }
 
-std::string format_variant(const libHybractal::float_variant_t& var,
+std::string format_variant(const libHybractal::float_variant_t &var,
                            int precision, bool is_hex) noexcept;
 
 std::string parse_input(std::string_view sv, int precision, bool format_as_hex,
-                        std::string& err) noexcept {
+                        std::string &err) noexcept {
   err.clear();
 
   if (sv.starts_with("0x") || sv.starts_with("0X")) {
-    return parse_input({sv.data() + 2, sv.end()}, precision, format_as_hex,
+    return parse_input({sv.begin() + 2, sv.end()}, precision, format_as_hex,
                        err);
   }
 
@@ -80,27 +80,27 @@ std::string parse_input(std::string_view sv, int precision, bool format_as_hex,
   return str1 + str2;
 }
 
-#define CENTERHEXCONVERT_MATCH_INDEX(index, var, val_for_format, ir) \
-  case (index): {                                                    \
-    auto val = std::get<(index)>(var);                               \
-    val_for_format = double(val);                                    \
-    ir = libHybractal::float_type_cvt<std::decay_t<decltype(val)>,   \
-                                      float_by_prec_t<8>>(val);      \
+#define CENTERHEXCONVERT_MATCH_INDEX(index, var, val_for_format, ir)           \
+  case (index): {                                                              \
+    auto val = std::get<(index)>(var);                                         \
+    val_for_format = double(val);                                              \
+    ir = libHybractal::float_type_cvt<std::decay_t<decltype(val)>,             \
+                                      float_by_prec_t<8>>(val);                \
   } break;
 
-#define CHX_MATCH_PRECISION(ir, precision, hex, bytes)                  \
-  case (precision): {                                                   \
-    {                                                                   \
-      float_by_prec_t<precision> val =                                  \
-          libHybractal::float_type_cvt<decltype(ir),                    \
-                                       float_by_prec_t<precision>>(ir); \
-      bytes = fractal_utils::bin_2_hex(&val, sizeof(val), hex.data(),   \
-                                       hex.size(), false);              \
-    }                                                                   \
-    break;                                                              \
+#define CHX_MATCH_PRECISION(ir, precision, hex, bytes)                         \
+  case (precision): {                                                          \
+    {                                                                          \
+      float_by_prec_t<precision> val =                                         \
+          libHybractal::float_type_cvt<decltype(ir),                           \
+                                       float_by_prec_t<precision>>(ir);        \
+      bytes = fractal_utils::bin_2_hex(&val, sizeof(val), hex.data(),          \
+                                       hex.size(), false);                     \
+    }                                                                          \
+    break;                                                                     \
   }
 
-std::string format_variant(const libHybractal::float_variant_t& var,
+std::string format_variant(const libHybractal::float_variant_t &var,
                            int precision, bool is_hex) noexcept {
   double val_for_format = NAN;
   float_by_prec_t<8> ir;
@@ -110,8 +110,8 @@ std::string format_variant(const libHybractal::float_variant_t& var,
     CENTERHEXCONVERT_MATCH_INDEX(1, var, val_for_format, ir);
     CENTERHEXCONVERT_MATCH_INDEX(2, var, val_for_format, ir);
     CENTERHEXCONVERT_MATCH_INDEX(3, var, val_for_format, ir);
-    default:
-      abort();
+  default:
+    abort();
   }
 
   if (is_hex) {
@@ -124,8 +124,8 @@ std::string format_variant(const libHybractal::float_variant_t& var,
       CHX_MATCH_PRECISION(ir, 2, hex, bytes);
       CHX_MATCH_PRECISION(ir, 4, hex, bytes);
       CHX_MATCH_PRECISION(ir, 8, hex, bytes);
-      default:
-        abort();
+    default:
+      abort();
     }
 
     if (!bytes.has_value()) {

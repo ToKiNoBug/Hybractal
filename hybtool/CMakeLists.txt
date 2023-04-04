@@ -22,6 +22,8 @@ target_link_libraries(hybtool PRIVATE
 
 target_include_directories(hybtool PRIVATE ${CLI11_include_dir})
 
+target_compile_definitions(hybtool PRIVATE "HYB_CMAKE_BUILD_TYPE=\"${CMAKE_BUILD_TYPE}\"")
+
 file(COPY ${CMAKE_SOURCE_DIR}/libRender/render1.json
     DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 

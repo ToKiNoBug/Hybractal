@@ -136,8 +136,8 @@ void test_float128(const bst_fl128 &val) noexcept {
       libHybractal::decode_boost_floatX<bst_fl128>(buffer, bytes).value();
 
   assert(retake == val);
-
+#ifdef __GNU__
   __float128 gcc_f128 = *reinterpret_cast<const __float128 *>(buffer);
-
+#endif
   // assert(val == bst_fl128(gcc_f128));
 }

@@ -193,10 +193,12 @@ int main(int argc, char **argv) {
     std::cout << fmt::format(
                      "Configured with : HYBRACTAL_SEQUENCE_STR = {}, "
                      "floating point precision = {}, sizeof hybf_float_t = "
-                     "{}.\n Float128 backend is {}, float256 backend is {}",
+                     "{}.\nFloat128 backend is {}, float256 backend is {}.\n"
+                     "CMAKE_BUILD_TYPE = {}",
                      HYBRACTAL_SEQUENCE_STR, HYBRACTAL_FLT_PRECISION,
                      sizeof(libHybractal::hybf_float_t),
-                     HYBRACTAL_FLOAT128_BACKEND, HYBRACTAL_FLOAT256_BACKEND)
+                     HYBRACTAL_FLOAT128_BACKEND, HYBRACTAL_FLOAT256_BACKEND,
+                     HYB_CMAKE_BUILD_TYPE)
               << std::endl;
   }
 

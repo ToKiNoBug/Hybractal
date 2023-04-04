@@ -260,7 +260,7 @@ bool write_concate_sources(std::string_view filename,
     return false;
   }
   for (const auto &filename : mp4s) {
-    ofs << fmt::format("file \'{}\'\n", stdfs::canonical(filename).c_str());
+    ofs << fmt::format("file \'{}\'\n", stdfs::canonical(filename).string());
     if (ofs.bad()) {
       return false;
     }
