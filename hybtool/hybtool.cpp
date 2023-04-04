@@ -16,6 +16,7 @@ This file is part of Hybractal.
     along with Hybractal.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+#include <fmt/format.h>
 #include <hex_convert.h>
 
 #include <CLI11.hpp>
@@ -23,12 +24,11 @@ This file is part of Hybractal.
 #include <variant>
 
 #include "hybtool.h"
-#include <fmt/format.h>
 
-std::array<libHybractal::hybf_float_t, 2>
-parse_center(const CLI::Option *opt_hex, std::string_view hex,
-             const CLI::Option *opt_cf64, const std::array<double, 2> &f64,
-             std::string &err) noexcept;
+std::array<libHybractal::hybf_float_t, 2> parse_center(
+    const CLI::Option *opt_hex, std::string_view hex,
+    const CLI::Option *opt_cf64, const std::array<double, 2> &f64,
+    std::string &err) noexcept;
 
 int main(int argc, char **argv) {
   CLI::App app;
@@ -192,14 +192,15 @@ int main(int argc, char **argv) {
   if (show_config) {
     std::cout << fmt::format(
                      "Configured with : HYBRACTAL_SEQUENCE_STR = {}, "
-                     "floating point precision = {}, sizeof hybf_float_t = {}",
+                     "floating point precision = {}, sizeof hybf_float_t = "
+                     "{}.\n Float128 backend is {}, float256 backend is {}",
                      HYBRACTAL_SEQUENCE_STR, HYBRACTAL_FLT_PRECISION,
-                     sizeof(libHybractal::hybf_float_t))
+                     sizeof(libHybractal::hybf_float_t),
+                     HYBRACTAL_FLOAT128_BACKEND, HYBRACTAL_FLOAT256_BACKEND)
               << std::endl;
   }
 
   if (compute->count() > 0) {
-
     task_c.info.wind.x_span = x_span_f64;
     task_c.info.wind.y_span = y_span_f64;
 
@@ -238,11 +239,10 @@ int main(int argc, char **argv) {
   return 0;
 }
 
-std::array<libHybractal::hybf_float_t, 2>
-parse_center(const CLI::Option *opt_center_hex, std::string_view center_hex,
-             const CLI::Option *opt_center_double,
-             const std::array<double, 2> &center_f64,
-             std::string &err) noexcept {
+std::array<libHybractal::hybf_float_t, 2> parse_center(
+    const CLI::Option *opt_center_hex, std::string_view center_hex,
+    const CLI::Option *opt_center_double,
+    const std::array<double, 2> &center_f64, std::string &err) noexcept {
   err.clear();
   std::array<libHybractal::hybf_float_t, 2> result;
 
@@ -253,7 +253,6 @@ parse_center(const CLI::Option *opt_center_hex, std::string_view center_hex,
 
     if (center_hex.size() != bytes_center &&
         center_hex.size() != (bytes_center + 2)) {
-
       err = fmt::format(
           "Invalid value for center_hex, expceted {} or {} characters",
           bytes_center, bytes_center + 2);

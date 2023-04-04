@@ -47,13 +47,16 @@ endif()
 
 set(HYB_sequence "1011101" CACHE STRING "")
 set(HYB_float_precision 2 CACHE STRING "The bytes of floating point number. Supported values: 1, 2, 4, 8")
-set(HYB_float128_backend boost CACHE STRING "The backend of 4 precision float. Possible values: boost, gcc_quadmath, gmp, mpfr")
-set(HYB_float256_backend boost CACHE STRING "The backend of 4 precision float. Possible values: boost, gmp, mpfr")
+set(HYB_float128_backend boost CACHE STRING "The backend of 4 precision float. Possible values: boost, gcc_quadmath")
+set(HYB_float256_backend boost CACHE STRING "The backend of 4 precision float. Possible values: boost")
 
 add_compile_definitions("HYBRACTAL_SEQUENCE_STR=\"${HYB_sequence}\"")
 add_compile_definitions(_USE_MATH_DEFINES)
 add_compile_definitions("HYBRACTAL_VERSION=\"${PROJECT_VERSION}\"")
 add_compile_definitions("HYBRACTAL_FLT_PRECISION=${HYB_float_precision}")
+
+include(cmake/add_float128_backend_defines.cmake)
+include(cmake/add_float256_backend_defines.cmake)
 
 if(${MSVC})
   add_compile_definitions("_SILENCE_NONFLOATING_COMPLEX_DEPRECATION_WARNING")

@@ -30,13 +30,22 @@ struct float_prec_to_type<2> {
 
 template <>
 struct float_prec_to_type<4> {
+#ifdef HYBRACTAL_FLOAT128_BACKEND_BOOST
   using type = boost::multiprecision::cpp_bin_float_quad;
+#endif
+
+#ifdef HYBRACTAL_FLOAT128_BACKEND_GCC_QUADMATH
+  using type = __float128;
+#endif
+
   using uint_type = boost::multiprecision::uint128_t;
 };
 
 template <>
 struct float_prec_to_type<8> {
+#ifdef HYBRACTAL_FLOAT256_BACKEND_BOOST
   using type = boost::multiprecision::cpp_bin_float_oct;
+#endif
   using uint_type = boost::multiprecision::uint256_t;
 };
 
