@@ -121,7 +121,8 @@ void libHybractal::compute_frame(
 
       if (map_z != nullptr) {
         if constexpr (std::is_trivial_v<hybf_float_t>) {
-          map_z->at<std::complex<hybf_store_t>>(r, c) = z;
+          map_z->at<std::complex<hybf_store_t>>(r, c).real(double(z.real()));
+          map_z->at<std::complex<hybf_store_t>>(r, c).imag(double(z.imag()));
         } else {
           auto &cplx = map_z->at<std::complex<hybf_store_t>>(r, c);
           cplx.real(float_type_cvt<hybf_float_t, hybf_store_t>(z.real()));

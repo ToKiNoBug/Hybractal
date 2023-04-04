@@ -8,6 +8,12 @@
 #include <boost/multiprecision/complex_adaptor.hpp>
 #include <boost/multiprecision/cpp_bin_float.hpp>
 #include <boost/multiprecision/cpp_int.hpp>
+
+#ifdef HYBRACTAL_FLOAT128_BACKEND_GCC_QUADMATH
+// #include <boost/multiprecision/complex128.hpp>
+#include <boost/multiprecision/float128.hpp>
+#endif
+
 #include <complex>
 #include <type_traits>
 #include <variant>
@@ -35,7 +41,8 @@ struct float_prec_to_type<4> {
 #endif
 
 #ifdef HYBRACTAL_FLOAT128_BACKEND_GCC_QUADMATH
-  using type = __float128;
+  using type = boost::multiprecision::float128;
+  static_assert(sizeof(type) == sizeof(__float128));
 #endif
 
   using uint_type = boost::multiprecision::uint128_t;
@@ -86,6 +93,7 @@ inline dst_t float_type_cvt(const src_t &src) noexcept {
   if constexpr (is_src_trival && !is_dst_trival) {
     // convert from boost types to float/double
     return dst_t(src);
+    // return src.template convert_to<dst_t>();
   }
 
   if constexpr (!is_src_trival && !is_dst_trival) {

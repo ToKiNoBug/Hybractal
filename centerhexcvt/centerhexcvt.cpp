@@ -84,17 +84,20 @@ std::string parse_input(std::string_view sv, int precision, bool format_as_hex,
   case (index): {                                                    \
     auto val = std::get<(index)>(var);                               \
     val_for_format = double(val);                                    \
-    ir = float_by_prec_t<8>(val);                                    \
+    ir = libHybractal::float_type_cvt<std::decay_t<decltype(val)>,   \
+                                      float_by_prec_t<8>>(val);      \
   } break;
 
-#define CHX_MATCH_PRECISION(ir, precision, hex, bytes)                \
-  case (precision): {                                                 \
-    {                                                                 \
-      float_by_prec_t<precision> val(ir);                             \
-      bytes = fractal_utils::bin_2_hex(&val, sizeof(val), hex.data(), \
-                                       hex.size(), false);            \
-    }                                                                 \
-    break;                                                            \
+#define CHX_MATCH_PRECISION(ir, precision, hex, bytes)                  \
+  case (precision): {                                                   \
+    {                                                                   \
+      float_by_prec_t<precision> val =                                  \
+          libHybractal::float_type_cvt<decltype(ir),                    \
+                                       float_by_prec_t<precision>>(ir); \
+      bytes = fractal_utils::bin_2_hex(&val, sizeof(val), hex.data(),   \
+                                       hex.size(), false);              \
+    }                                                                   \
+    break;                                                              \
   }
 
 std::string format_variant(const libHybractal::float_variant_t& var,

@@ -64,6 +64,18 @@ constexpr int floatX_precision() {
   if constexpr (std::is_same_v<flt_t, float_by_prec_t<8>>) {
     return 8;
   }
+
+  if constexpr (std::is_same_v<flt_t,
+                               boost::multiprecision::cpp_bin_float_quad>) {
+    return 4;
+  }
+
+#ifdef HYBRACTAL_FLOAT128_BACKEND_GCC_QUADMATH
+  if constexpr (std::is_same_v<flt_t, __float128>) {
+    return 4;
+  }
+#endif
+
   return -1;
 }
 
