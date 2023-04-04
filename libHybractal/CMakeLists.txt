@@ -21,6 +21,10 @@ target_link_libraries(Hybractal PUBLIC
   Boost::multiprecision
   fmt::fmt)
 
+if(${HYB_have_gmp})
+  target_link_libraries(Hybractal PUBLIC HYB_gmp_cxx)
+endif()
+
 if(NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
   if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     target_compile_options(Hybractal PRIVATE "-Ofast")
@@ -44,6 +48,7 @@ target_link_libraries(Hybfile PUBLIC
   yalantinglibs::struct_pack
   zstd::libzstd_static
   fmt::fmt)
+
 
 # tests
 add_executable(test_compute test_compute.cpp)

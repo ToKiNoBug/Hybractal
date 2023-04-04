@@ -2,6 +2,7 @@
 #include <libHybractal.h>
 
 #include <boost/multiprecision/cpp_bin_float.hpp>
+// #include <boost/multiprecision/gmp.hpp>
 #include <float_encode.hpp>
 #include <iostream>
 
@@ -25,17 +26,43 @@ void print_bin(uint128_t val, bool is_little_endian) noexcept {
 
 void test_bin(bool quiet) noexcept;
 
-void encode_float128(const bst_fl128 &val) noexcept;
-
-void encode_float256(const bst_fl256 &val) noexcept;
-
 void test_float128(const bst_fl128 &val) noexcept;
+
+template <int precision>
+void test_float_X(float_by_prec_t<precision> flt) noexcept {
+  uint8_t buffer[precision * 4];
+  constexpr size_t buffer_capacity = sizeof(buffer);
+
+  auto encoded_bytes =
+      libHybractal::encode_float(flt, buffer, buffer_capacity).value();
+
+  auto decoded_value = libHybractal::decode_float<float_by_prec_t<precision>>(
+                           buffer, encoded_bytes)
+                           .value();
+
+  assert(decoded_value == flt);
+}
 
 int main() {
   test_bin(true);
   test_float128(bst_fl128(1) / 3);
   test_float128(bst_fl128(-1) / 3);
   test_float128(bst_fl128(-1) / bst_fl128("1e4933"));
+
+  test_float_X<1>(114514);
+  test_float_X<2>(114514);
+  test_float_X<4>(114514);
+  test_float_X<8>(114514);
+
+  uint256_t u256;
+  u256 = -1;
+
+  std::vector<uint8_t> buffer;
+  buffer.reserve(4096);
+
+  boost::multiprecision::export_bits(u256, std::back_inserter(buffer), 8);
+
+  // cout << "buffer.size() = " << buffer.size() << endl;
 
   cout << "Success" << endl;
 
@@ -95,43 +122,6 @@ void test_bin(bool quiet) noexcept {
     print_bin(buffer, 64 / 8);
   }
   assert(*reinterpret_cast<const uint64_t *>(buffer) != u64);
-}
-
-void encode_float128(const bst_fl128 &flt) noexcept {
-  uint128_t bin{0};
-
-  constexpr int bits = bst_fl128::backend_type::bit_count;
-  constexpr int bits_encoded = bits - 1;
-  constexpr int exp_bits = 128 - (bits_encoded)-1;
-  constexpr int exp_offset = bst_fl128::backend_type::max_exponent;
-
-  if (flt.sign() < 0) {
-    bin |= 1;
-  }
-  bin = bin << exp_bits;
-
-  bin |= (flt.backend().exponent() + exp_offset);
-  bin = bin << bits_encoded;
-
-  const uint128_t mask = (uint128_t(1) << bits_encoded) - 1;
-
-  bin |= (uint128_t(flt.backend().bits()) & mask);
-
-  print_bin(bin, true);
-}
-
-void encode_float256(const bst_fl256 &val) noexcept {
-  uint8_t buffer[4096];
-
-  libHybractal::encode_boost_floatX<bst_fl256>(val, buffer, sizeof(buffer));
-
-  print_bin(buffer, 256 / 8);
-}
-
-void decode_float128(const uint128_t &bin) noexcept {
-  bst_fl128 flt;
-
-  flt.backend().sign() = bool(bin >> 127);
 }
 
 void test_float128(const bst_fl128 &val) noexcept {

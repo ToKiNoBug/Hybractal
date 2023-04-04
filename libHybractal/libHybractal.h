@@ -119,7 +119,7 @@ inline std::complex<float_t> iterate_mandelbrot(
     std::complex<float_t> z, const std::complex<float_t> &C) noexcept {
   return z * z + C;
 }
-
+namespace internal {
 template <typename flt_t>
 inline auto abs(flt_t val) {
   if (val >= 0) {
@@ -127,12 +127,13 @@ inline auto abs(flt_t val) {
   }
   return -val;
 }
+}  // namespace internal
 
 template <typename float_t>
 inline std::complex<float_t> iterate_burningship(
     std::complex<float_t> z, const std::complex<float_t> &C) noexcept {
-  z.real(abs(z.real()));
-  z.imag(abs(z.imag()));
+  z.real(internal::abs(z.real()));
+  z.imag(internal::abs(z.imag()));
 
   return z * z + C;
 }

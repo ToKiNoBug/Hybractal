@@ -4,7 +4,34 @@
 #include <optional>
 
 #include "libHybractal.h"
+
 namespace libHybractal {
+
+constexpr int guess_precision(size_t bytes, bool is_old) {
+  if (bytes % 4 == 2) {
+    return guess_precision(bytes - 2, is_old);
+  }
+
+  if (bytes == float_bytes(1)) {
+    return 1;
+  }
+  if (bytes == float_bytes(2)) {
+    return 2;
+  }
+  if ((bytes == float_bytes(4) && is_old)) {
+    return 4;
+  }
+  if ((bytes == float_bytes(8)) && is_old) {
+    return 8;
+  }
+
+  if ((bytes % 4 == 0) && !is_old) {
+    return bytes / 4;
+  }
+
+  return -1;
+}
+
 template <typename uintX_t>
 constexpr int uintX_precision() {
   if constexpr (std::is_same_v<uintX_t, uint_by_prec_t<1>>) {
@@ -56,6 +83,17 @@ constexpr int floatX_bits() {
   return precision * 32;
 }
 
+template <typename flt_t>
+concept is_boost_multiprecison_float = requires(const flt_t &flt) {
+                                         requires !std::is_trivial_v<flt_t>;
+                                         flt.backend();
+                                         flt.backend().sign();
+                                         flt.backend().exponent();
+                                         flt.backend().bits();
+                                         flt_t::backend_type::bit_count;
+                                         flt_t::backend_type::max_exponent;
+                                       };
+
 namespace internal {
 
 template <typename uintX_t>
@@ -105,6 +143,7 @@ uintX_t decode_uintX(const void *void_src,
 }
 
 template <typename flt_t>
+  requires is_boost_multiprecison_float<flt_t>
 void encode_boost_floatX(const flt_t &flt, void *dst) noexcept {
   static_assert(!std::is_trivial_v<flt_t>);
 
@@ -135,6 +174,7 @@ void encode_boost_floatX(const flt_t &flt, void *dst) noexcept {
 }
 
 template <typename flt_t>
+  requires is_boost_multiprecison_float<flt_t>
 flt_t decode_boost_floatX(const void *src) noexcept {
   static_assert(!std::is_trivial_v<flt_t>);
 
@@ -161,18 +201,20 @@ flt_t decode_boost_floatX(const void *src) noexcept {
   result.backend().exponent() = exp_t(exp_value) - exp_bias;
 
   uintX_t mantissa = bin & ((uintX_t(1) << bits_encoded) - 1);
-
   if (exp_value != 0) {
     mantissa |= (uintX_t(1) << bits_encoded);
   }
 
-  using bits_t = std::decay_t<decltype(result.backend().bits())>;
+  {
+    using uint_bits_t =
+        boost::multiprecision::number<boost::multiprecision::cpp_int_backend<
+            bits, bits, boost::multiprecision::unsigned_magnitude,
+            boost::multiprecision::unchecked, void>>;
 
-  // bits_t bits_val = mantissa;
+    uint_bits_t temp = mantissa.template convert_to<uint_bits_t>();
 
-  result.backend().bits() = mantissa.template convert_to<bits_t>();
-
-  // result.backend().exponent()=
+    result.backend().bits() = temp.backend();
+  }
 
   return result;
 }
@@ -205,6 +247,7 @@ std::optional<uintX_t> decode_uintX(const void *src, size_t src_bytes,
 }
 
 template <typename flt_t>
+  requires is_boost_multiprecison_float<flt_t>
 std::optional<size_t> encode_boost_floatX(const flt_t &flt, void *dst,
                                           size_t capacity) noexcept {
   constexpr int precision = floatX_precision<flt_t>();
@@ -220,6 +263,7 @@ std::optional<size_t> encode_boost_floatX(const flt_t &flt, void *dst,
 }
 
 template <typename flt_t>
+  requires is_boost_multiprecison_float<flt_t>
 std::optional<flt_t> decode_boost_floatX(const void *src,
                                          size_t src_bytes) noexcept {
   constexpr int precision = floatX_precision<flt_t>();
@@ -232,6 +276,56 @@ std::optional<flt_t> decode_boost_floatX(const void *src,
   }
 
   return internal::decode_boost_floatX<flt_t>(src);
+}
+
+template <typename flt_t>
+std::optional<size_t> encode_float(const flt_t &flt, void *dst,
+                                   size_t capacity) noexcept {
+  constexpr bool is_trivial = std::is_trivial_v<flt_t>;
+  constexpr bool is_boost = is_boost_multiprecison_float<flt_t>;
+
+  constexpr bool is_known_type = is_boost || is_trivial;
+  static_assert(is_known_type, "No way to serialize this type.");
+
+  if constexpr (is_trivial) {
+    constexpr size_t bytes = sizeof(flt_t);
+
+    if (bytes > capacity) {
+      return std::nullopt;
+    }
+
+    memcpy(dst, &flt, bytes);
+    return bytes;
+  }
+
+  if constexpr (is_boost) {
+    return encode_boost_floatX(flt, dst, capacity);
+  }
+
+  return std::nullopt;
+}
+
+template <typename flt_t>
+std::optional<flt_t> decode_float(const void *src, size_t bytes) noexcept {
+  constexpr bool is_trivial = std::is_trivial_v<flt_t>;
+  constexpr bool is_boost = is_boost_multiprecison_float<flt_t>;
+
+  constexpr bool is_known_type = is_boost || is_trivial;
+  static_assert(is_known_type, "No way to serialize this type.");
+
+  if constexpr (is_trivial) {
+    if (bytes != sizeof(flt_t)) {
+      return std::nullopt;
+    }
+
+    return *reinterpret_cast<const flt_t *>(src);
+  }
+
+  if constexpr (is_boost) {
+    return decode_boost_floatX<flt_t>(src, bytes);
+  }
+
+  return std::nullopt;
 }
 
 }  // namespace libHybractal
