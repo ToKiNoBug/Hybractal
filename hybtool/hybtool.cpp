@@ -20,14 +20,16 @@ This file is part of Hybractal.
 #include <hex_convert.h>
 
 #include <CLI11.hpp>
+#include <float_encode.hpp>
 #include <thread>
 #include <variant>
 
 #include "hybtool.h"
 
-std::array<libHybractal::hybf_float_t, 2> parse_center(
+libHybractal::center_wind_variant_t parse_wind(
     const CLI::Option *opt_hex, std::string_view hex,
     const CLI::Option *opt_cf64, const std::array<double, 2> &f64,
+    const std::array<double, 2> &xy_span, int assigned_precision,
     std::string &err) noexcept;
 
 int main(int argc, char **argv) {
@@ -79,7 +81,9 @@ int main(int argc, char **argv) {
 
   double x_span_f64{-1}, y_span_f64{-1};
 
-  compute->add_option("--precision,-p", task_c.info.float_precision)
+  int precision;
+
+  compute->add_option("--precision,-p", precision)
       ->check(CLI::IsMember{{1, 2, 4, 8}})
       ->required();
   compute
@@ -194,25 +198,23 @@ int main(int argc, char **argv) {
 
   if (show_config) {
     std::cout << fmt::format(
-                     "Configured with : HYBRACTAL_SEQUENCE_STR = {}, "
-                     "floating point precision = {}, sizeof hybf_float_t = "
-                     "{}.\nFloat128 backend is {}, float256 backend is {}.\n"
+                     "Configured with : HYBRACTAL_SEQUENCE_STR = {}. Float128 "
+                     "backend is {}, float256 backend is {}.\n"
                      "CMAKE_BUILD_TYPE = {}",
-                     HYBRACTAL_SEQUENCE_STR, HYBRACTAL_FLT_PRECISION,
-                     sizeof(libHybractal::hybf_float_t),
-                     HYBRACTAL_FLOAT128_BACKEND, HYBRACTAL_FLOAT256_BACKEND,
-                     HYB_CMAKE_BUILD_TYPE)
+                     HYBRACTAL_SEQUENCE_STR, HYBRACTAL_FLOAT128_BACKEND,
+                     HYBRACTAL_FLOAT256_BACKEND, HYB_CMAKE_BUILD_TYPE)
               << std::endl;
   }
 
   if (compute->count() > 0) {
-    task_c.info.wind.x_span = x_span_f64;
-    task_c.info.wind.y_span = y_span_f64;
-
-    task_c.override_x_span();
     std::string err;
-    task_c.info.wind.center = parse_center(opt_center_hex, center_hex,
-                                           opt_center_double, center_f64, err);
+
+    task_c.info.wind =
+        parse_wind(opt_center_hex, center_hex, opt_center_double, center_f64,
+                   {x_span_f64, y_span_f64}, precision, err);
+    if (x_span_f64 <= 0) {
+      task_c.override_x_span();
+    }
 
     if (!err.empty()) {
       std::cerr << "Failed to parse center. Details: " << err << std::endl;
@@ -244,45 +246,81 @@ int main(int argc, char **argv) {
   return 0;
 }
 
-std::array<libHybractal::hybf_float_t, 2> parse_center(
-    const CLI::Option *opt_center_hex, std::string_view center_hex,
-    const CLI::Option *opt_center_double,
-    const std::array<double, 2> &center_f64, std::string &err) noexcept {
+libHybractal::center_wind_variant_t parse_chx(
+    std::string_view hex, const std::array<double, 2> &xy_span,
+    int assigned_precison, std::string &err) noexcept {
   err.clear();
-  std::array<libHybractal::hybf_float_t, 2> result;
-
-  if (opt_center_hex->count() > 0) {
-    // if center hex is assigned, use center hex
-
-    constexpr size_t bytes_center = sizeof(result);
-
-    if (center_hex.size() != bytes_center &&
-        center_hex.size() != (bytes_center + 2)) {
-      err = fmt::format(
-          "Invalid value for center_hex, expceted {} or {} characters",
-          bytes_center, bytes_center + 2);
-      return {};
-    }
-
-    auto ret =
-        fractal_utils::hex_2_bin(center_hex, result.data(), sizeof(result));
-    if (!ret.has_value() || ret.value() != sizeof(result)) {
-      err = "Invalid value for center_hex";
-      return {};
-    }
-
-    return result;
+  if (hex.starts_with("0x") || hex.starts_with("0X")) {
+    return parse_chx({hex.begin() + 2, hex.end()}, xy_span, assigned_precison,
+                     err);
   }
 
-  // center hex is not assigned, use center_f64
+  const size_t length = hex.size();
 
-  if (opt_center_double->count() <= 0) {
-    err = "No value for center";
+  const int precision = libHybractal::guess_precision(length / 2 * 2, true);
+
+  if (precision <= 0) {
+    err = fmt::format(
+        "Failed to deduce precision. The bytes of single floating-point number "
+        "is {}.",
+        length / 2 * 2);
     return {};
   }
 
-  result[0] = center_f64[0];
-  result[1] = center_f64[1];
+  if (assigned_precison > 0) {
+    // the precision is assigned
+    if (assigned_precison != precision) {
+      err = fmt::format(
+          "The assigned precision {} mismatch with deduced precision {}.",
+          assigned_precison, precision);
+      return {};
+    }
+  }
 
-  return result;
+  return libHybractal::make_center_wind_variant(hex, xy_span[0], xy_span[0],
+                                                precision, err);
+}
+
+#define HYBTOOL_PRIVATE_MACRO_MATCH_PRECISION(precision)        \
+  case (precision):                                             \
+    return libHybractal::make_center_wind_by_prec<(precision)>( \
+        {float_by_prec_t<(precision)>(f64[0]),                  \
+         float_by_prec_t<(precision)>(f64[1])},                 \
+        xy_span[0], xy_span[1]);
+
+libHybractal::center_wind_variant_t prase_cf64(
+    const std::array<double, 2> &f64, const std::array<double, 2> &xy_span,
+    int assigned_precision, std::string &err) noexcept {
+  if (!libHybractal::is_valid_precision(assigned_precision)) {
+    err = fmt::format("Invalid precision {}", assigned_precision);
+    return {};
+  }
+
+  switch (assigned_precision) {
+    HYBTOOL_PRIVATE_MACRO_MATCH_PRECISION(1);
+    HYBTOOL_PRIVATE_MACRO_MATCH_PRECISION(2);
+    HYBTOOL_PRIVATE_MACRO_MATCH_PRECISION(4);
+    HYBTOOL_PRIVATE_MACRO_MATCH_PRECISION(8);
+    default:
+      abort();
+  }
+}
+
+libHybractal::center_wind_variant_t parse_wind(
+    const CLI::Option *opt_hex, std::string_view hex,
+    const CLI::Option *opt_cf64, const std::array<double, 2> &f64,
+    const std::array<double, 2> &xy_span, int assigned_precision,
+    std::string &err) noexcept {
+  err.clear();
+
+  if (opt_hex->count()) {
+    return parse_chx(hex, xy_span, assigned_precision, err);
+  } else {
+    if (opt_cf64->count() <= 0) {
+      err = "No value for center. Please set center with hex or double.";
+      return {};
+    }
+
+    return prase_cf64(f64, xy_span, assigned_precision, err);
+  }
 }

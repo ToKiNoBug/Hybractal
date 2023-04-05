@@ -21,7 +21,6 @@ This file is part of Hybractal.
 
 #include "hybtool.h"
 
-
 bool run_compute(const task_compute &task) noexcept {
   omp_set_num_threads(task.threads);
 
@@ -34,8 +33,9 @@ bool run_compute(const task_compute &task) noexcept {
 
   double wtime;
   wtime = omp_get_wtime();
-  libHybractal::compute_frame(file.metainfo().window(), file.metainfo().maxit,
-                              mat_age, file.have_mat_z() ? &mat_z : nullptr);
+  libHybractal::compute_frame_by_precision(
+      file.metainfo().window_base(), file.metainfo().precision(),
+      file.metainfo().maxit, mat_age, file.have_mat_z() ? &mat_z : nullptr);
   wtime = omp_get_wtime() - wtime;
 
   if (task.bechmark) {

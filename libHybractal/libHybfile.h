@@ -79,6 +79,11 @@ fractal_utils::center_wind<float_by_prec_t<precision>> make_center_wind_by_prec(
   return make_center_wind(center, x_span, y_span);
 }
 
+center_wind_variant_t make_center_wind_variant(std::string_view chx,
+                                               double x_span, double y_span,
+                                               int precision,
+                                               std::string &err) noexcept;
+
 struct hybf_metainfo_new {
  public:
   uint64_t sequence_bin{::libHybractal::convert_to_bin(HYBRACTAL_SEQUENCE_STR)};

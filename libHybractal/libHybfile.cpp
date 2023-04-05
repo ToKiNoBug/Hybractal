@@ -128,7 +128,7 @@ decode_metainfo(const void *src, size_t bytes, std::string &err) noexcept {
     return temp;                                                             \
   }
 
-libHybractal::center_wind_variant_t make_center_wind_variant(
+libHybractal::center_wind_variant_t libHybractal::make_center_wind_variant(
     std::string_view chx, double x_span, double y_span, int precision,
     std::string &err) noexcept {
   err.clear();

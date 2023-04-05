@@ -16,11 +16,13 @@ This file is part of Hybractal.
     along with Hybractal.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include "hybtool.h"
 #include <fmt/format.h>
-#include <fstream>
 #include <hex_convert.h>
+
+#include <fstream>
 #include <iostream>
+
+#include "hybtool.h"
 
 using std::cout, std::cerr, std::endl;
 
@@ -73,10 +75,11 @@ bool run_look(const task_look &task) noexcept {
   }
 
   if (task.show_window || task.show_all) {
-    cout << fmt::format(
-        "Window: center = {}{:+}i, x_span = {}, y_span = {}\n",
-        double(metainfo.wind.center[0]), double(metainfo.wind.center[1]),
-        double(metainfo.wind.x_span), double(metainfo.wind.y_span));
+    cout << fmt::format("Window: center = {}{:+}i, x_span = {}, y_span = {}\n",
+                        metainfo.window_base().displayed_center()[0],
+                        metainfo.window_base().displayed_center()[1],
+                        metainfo.window_base().displayed_x_span(),
+                        metainfo.window_base().displayed_y_span());
     cout << endl;
   }
 
@@ -93,7 +96,7 @@ bool run_look(const task_look &task) noexcept {
 
   if (task.show_precision || task.show_all) {
     cout << fmt::format("Floating point precision : {}\n",
-                        metainfo.float_precision);
+                        metainfo.precision());
     cout << endl;
   }
 
@@ -146,9 +149,9 @@ bool run_look(const task_look &task) noexcept {
            << endl;
       return false;
     }
-    if (!export_bin_file(task.extract_z_decompress, archive.mat_z_data().data(),
-                         archive.mat_z_data().size() *
-                             sizeof(archive.mat_z_data()[0]))) {
+    if (!export_bin_file(
+            task.extract_z_decompress, archive.mat_z_data().data(),
+            archive.mat_z_data().size() * sizeof(archive.mat_z_data()[0]))) {
       return false;
     }
   }

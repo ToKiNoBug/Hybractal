@@ -29,7 +29,14 @@ struct task_compute {
   bool save_mat_z{false};
   bool bechmark{false};
   void override_x_span() noexcept {
-    this->info.wind.x_span = this->info.wind.y_span * info.cols / info.rows;
+    const double rows = info.rows;
+    const double cols = info.cols;
+
+    auto update_x_span = [rows, cols](auto &w) -> void {
+      w.x_span = w.y_span * (cols / rows);
+    };
+
+    std::visit(update_x_span, this->info.wind);
   }
 
   void override_center(const std::array<uint64_t, 2> &src) noexcept;

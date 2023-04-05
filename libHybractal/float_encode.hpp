@@ -7,7 +7,8 @@
 
 namespace libHybractal {
 
-constexpr int guess_precision(size_t bytes, bool is_old) {
+constexpr int guess_precision(size_t bytes_single_number, bool is_old) {
+  const int bytes = bytes_single_number;
   if (bytes % 4 == 2) {
     return guess_precision(bytes - 2, is_old);
   }
