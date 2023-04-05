@@ -46,14 +46,12 @@ endif()
 
 
 set(HYB_sequence "1011101" CACHE STRING "")
-set(HYB_float_precision 2 CACHE STRING "The bytes of floating point number. Supported values: 1, 2, 4, 8")
 set(HYB_float128_backend boost CACHE STRING "The backend of 4 precision float. Possible values: boost, gcc_quadmath")
 set(HYB_float256_backend boost CACHE STRING "The backend of 4 precision float. Possible values: boost")
 
 add_compile_definitions("HYBRACTAL_SEQUENCE_STR=\"${HYB_sequence}\"")
 add_compile_definitions(_USE_MATH_DEFINES)
 add_compile_definitions("HYBRACTAL_VERSION=\"${PROJECT_VERSION}\"")
-#add_compile_definitions("HYBRACTAL_FLT_PRECISION=${HYB_float_precision}")
 
 include(cmake/add_float128_backend_defines.cmake)
 include(cmake/add_float256_backend_defines.cmake)
@@ -72,3 +70,7 @@ add_subdirectory(videotool)
 set(CPACK_PROJECT_NAME ${PROJECT_NAME})
 set(CPACK_PROJECT_VERSION ${PROJECT_VERSION})
 include(CPack)
+
+if(DEFINED HYB_float_precision)
+  message(WARNING "HYB_float_precision must not be defined, but it is set to ${HYB_float_precision}")
+endif()

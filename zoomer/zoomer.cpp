@@ -28,6 +28,7 @@ This file is part of Hybractal.
 #include <QApplication>
 #include <QMainWindow>
 #include <iostream>
+#include <memory>
 
 void compute_fun(const fractal_utils::wind_base &, void *custom_ptr,
                  fractal_utils::fractal_map *map_fractal);
@@ -51,6 +52,13 @@ struct metainfo4gui_s {
 
 metainfo4gui_s get_info_struct(std::string_view filename,
                                std::string_view json) noexcept;
+
+#define ZOOMER_PRIVATE_MATCH_PRECISION(precision)                \
+  case (precision):                                              \
+    window_ptr.reset(new fractal_utils::mainwindow(              \
+        float_by_prec_t<(precision)>(0.0), nullptr, window_size, \
+        sizeof(uint16_t)));                                      \
+    break;
 
 int main(int argc, char **argv) {
   omp_set_num_threads(20);
@@ -85,23 +93,30 @@ int main(int argc, char **argv) {
 
   const std::array<int, 2> window_size{(int)metainfo.info.rows,
                                        (int)metainfo.info.cols};
+  std::unique_ptr<fractal_utils::mainwindow> window_ptr{nullptr};
 
-  fractal_utils::mainwindow window(libHybractal::hybf_float_t(0.0), nullptr,
-                                   window_size, sizeof(uint16_t));
+  switch (metainfo.info.precision()) {
+    ZOOMER_PRIVATE_MATCH_PRECISION(1);
+    ZOOMER_PRIVATE_MATCH_PRECISION(2);
+    ZOOMER_PRIVATE_MATCH_PRECISION(4);
+    ZOOMER_PRIVATE_MATCH_PRECISION(8);
+    default:
+      abort();
+  }
 
-  window.set_window(metainfo.info.window());
-  window.display_range();
+  window_ptr->set_window(metainfo.info.window_base());
+  window_ptr->display_range();
 
-  window.callback_compute_fun = compute_fun;
-  window.callback_render_fun = render_fun;
-  window.callback_export_fun = export_fun;
+  window_ptr->callback_compute_fun = compute_fun;
+  window_ptr->callback_render_fun = render_fun;
+  window_ptr->callback_export_fun = export_fun;
 
-  window.frame_file_extension_list = "*.hybf";
+  window_ptr->frame_file_extension_list = "*.hybf";
 
-  window.custom_parameters = &metainfo;
+  window_ptr->custom_parameters = &metainfo;
 
-  window.show();
-  window.compute_and_paint();
+  window_ptr->show();
+  window_ptr->compute_and_paint();
 
   return qapp.exec();
 }
@@ -133,21 +148,20 @@ metainfo4gui_s get_info_struct(std::string_view filename,
 
 void compute_fun(const fractal_utils::wind_base &__wind, void *custom_ptr,
                  fractal_utils::fractal_map *map_fractal) {
-  const auto wind = dynamic_cast<
-      const fractal_utils::center_wind<libHybractal::hybf_float_t> &>(__wind);
   if (false) {
     std::cout << fmt::format(
                      "wind : center = [{}, {}], x_span = {}, y_span = {}",
-                     double(wind.center[0]), double(wind.center[1]),
-                     double(wind.x_span), double(wind.y_span))
+                     __wind.displayed_center()[0], __wind.displayed_center()[1],
+                     __wind.displayed_x_span(), __wind.displayed_y_span())
               << std::endl;
   }
 
   auto *metainfo = reinterpret_cast<metainfo4gui_s *>(custom_ptr);
   if (false) std::cout << "maxit = " << metainfo->info.maxit << std::endl;
 
-  libHybractal::compute_frame(wind, metainfo->info.maxit, *map_fractal,
-                              &metainfo->mat_z);
+  libHybractal::compute_frame_by_precision(__wind, metainfo->info.precision(),
+                                           metainfo->info.maxit, *map_fractal,
+                                           &metainfo->mat_z);
 }
 
 void render_fun(const fractal_utils::fractal_map &map_fractal,
@@ -173,14 +187,9 @@ bool export_fun(const fractal_utils::fractal_map &map_fractal,
   libHybractal::hybf_archive archive{metainfo->info.rows, metainfo->info.cols,
                                      true};
 
-  const auto wind = dynamic_cast<
-      const fractal_utils::center_wind<libHybractal::hybf_float_t> &>(__wind);
-
   {
     archive.metainfo().maxit = metainfo->info.maxit;
-    archive.metainfo().wind.center = wind.center;
-    archive.metainfo().wind.x_span = wind.x_span;
-    archive.metainfo().wind.y_span = wind.y_span;
+    __wind.copy_to(libHybractal::extract_wind_base(archive.metainfo().wind));
   }
 
   memcpy(archive.map_age().data, map_fractal.data, map_fractal.byte_count());
