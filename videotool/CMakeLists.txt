@@ -23,3 +23,6 @@ target_link_libraries(videotool PRIVATE fmt OpenMP::OpenMP_CXX)
 
 install(TARGETS videotool
     RUNTIME DESTINATION bin)
+
+add_test(NAME videotool-parse
+    COMMAND videotool ${CMAKE_CURRENT_SOURCE_DIR}/videotask.json)
