@@ -142,13 +142,12 @@ libHybractal::center_wind_variant_t libHybractal::make_center_wind_variant(
     return {};
   }
 
-  const size_t offset_bytes = libHybractal::float_bytes(precision);
-  const size_t offset_chars = offset_bytes * 2;
-  if (chx.length() != offset_chars) {
+  const size_t required_chars = libHybractal::float_bytes(precision) * 2 * 2;
+  if (chx.length() != required_chars) {
     err = fmt::format(
         "Length of center_hex is invalid. center_hex = \"{}\", length = {}, "
-        "but expected {} bytes.",
-        chx, chx.length(), offset_chars);
+        "but expected {} chars. Precision = {}",
+        chx, chx.length(), required_chars, precision);
     return {};
   }
 
@@ -345,7 +344,7 @@ libHybractal::hybf_archive libHybractal::hybf_archive::load(
 
     if (buffer.size() != rows * cols * sizeof(uint16_t)) {
       err->assign(fmt::format(
-          "Size of mat_age mismatch. Expected {} but in fact bytes.",
+          "Size of mat_age mismatch. Expected {} but in fact {} bytes.",
           rows * cols * sizeof(uint16_t), buffer.size()));
       return {};
     }
@@ -370,7 +369,7 @@ libHybractal::hybf_archive libHybractal::hybf_archive::load(
 
       if (buffer.size() != rows * cols * sizeof(std::complex<hybf_store_t>)) {
         err->assign(fmt::format(
-            "Size of mat_age mismatch. Expected {} but in fact bytes.",
+            "Size of mat_age mismatch. Expected {} but in fact {} bytes.",
             rows * cols * sizeof(std::complex<hybf_store_t>), buffer.size()));
         return {};
       }
