@@ -20,10 +20,10 @@ struct hybf_metainfo {
   size_t rows{0};
   size_t cols{0};
 
-  inline fractal_utils::center_wind<hybf_float_t> window() const noexcept {
-    fractal_utils::center_wind<hybf_float_t> ret;
-    ret.center[0] = libHybractal::float_type_cvt(this->window_center[0]);
-    ret.center[1] = libHybractal::float_type_cvt(this->window_center[1]);
+  inline fractal_utils::center_wind<double> window() const noexcept {
+    fractal_utils::center_wind<double> ret;
+    ret.center[0] = (this->window_center[0]);
+    ret.center[1] = (this->window_center[1]);
     ret.set_x_span(this->window_xy_span[0]);
     ret.set_y_span(this->window_xy_span[1]);
 
@@ -45,21 +45,58 @@ struct hybf_ir_new {
   int16_t float_t_prec;
 };
 
+using center_wind_variant_t =
+    std::variant<fractal_utils::center_wind<float_by_prec_t<1>>,
+                 fractal_utils::center_wind<float_by_prec_t<2>>,
+                 fractal_utils::center_wind<float_by_prec_t<4>>,
+                 fractal_utils::center_wind<float_by_prec_t<8>>>;
+
+template <typename float_t>
+fractal_utils::center_wind<float_t> make_center_wind(
+    const std::complex<float_t> &center, const float_t &x_span,
+    const float_t &y_span) noexcept {
+  fractal_utils::center_wind<float_t> ret;
+
+  ret.center = {center.real(), center.imag()};
+
+  ret.x_span = x_span;
+  ret.y_span = y_span;
+
+  return ret;
+}
+
+fractal_utils::wind_base *extract_wind_base(
+    center_wind_variant_t &var) noexcept;
+
+const fractal_utils::wind_base *extract_wind_base(
+    const center_wind_variant_t &var) noexcept;
+
+template <int precision>
+fractal_utils::center_wind<float_by_prec_t<precision>> make_center_wind_by_prec(
+    const std::complex<float_by_prec_t<precision>> &center,
+    const float_by_prec_t<precision> &x_span,
+    const float_by_prec_t<precision> &y_span) noexcept {
+  return make_center_wind(center, x_span, y_span);
+}
+
 struct hybf_metainfo_new {
-public:
+ public:
   uint64_t sequence_bin{::libHybractal::convert_to_bin(HYBRACTAL_SEQUENCE_STR)};
   uint64_t sequence_len{::libHybractal::static_strlen(HYBRACTAL_SEQUENCE_STR)};
-  fractal_utils::center_wind<hybf_float_t> wind;
+  center_wind_variant_t wind;
   size_t rows{0};
   size_t cols{0};
   int maxit{100};
-  int16_t float_precision{HYBRACTAL_FLT_PRECISION};
 
-private:
+ private:
   std::string chx{};
 
-public:
+ public:
   inline const auto &window() const noexcept { return this->wind; }
+
+  inline const fractal_utils::wind_base &window_base() const noexcept {
+    return *extract_wind_base(this->wind);
+  }
 
   const auto &center_hex() const noexcept { return this->chx; }
 
@@ -67,6 +104,10 @@ public:
                                           std::string &err) noexcept;
 
   hybf_ir_new to_ir() const noexcept;
+
+  inline int precision() const noexcept {
+    return libHybractal::variant_index_to_precision(this->wind.index());
+  }
 };
 
 struct load_options {
@@ -76,19 +117,19 @@ struct load_options {
 };
 
 class hybf_archive {
-private:
+ private:
   hybf_metainfo_new m_info;
   std::vector<uint16_t> data_age;
   std::vector<std::complex<hybf_store_t>> data_z;
 
-public:
+ public:
   enum seg_id : int64_t {
     id_metainfo = 666,
     id_mat_age = 114514,
     id_mat_z = 1919810,
   };
 
-public:
+ public:
   hybf_archive() : hybf_archive(0, 0, false) {}
   explicit hybf_archive(size_t rows, size_t cols, bool have_z);
   auto &metainfo() noexcept { return this->m_info; }
@@ -143,6 +184,6 @@ std::vector<uint8_t> compress(const void *src, size_t bytes) noexcept;
 void decompress(const void *src, size_t src_bytes,
                 std::vector<uint8_t> &dest) noexcept;
 
-} // namespace libHybractal
+}  // namespace libHybractal
 
-#endif // HYBRACTAL_LIBHYBFILE_H
+#endif  // HYBRACTAL_LIBHYBFILE_H

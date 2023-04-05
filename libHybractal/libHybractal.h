@@ -67,10 +67,10 @@ using uint_by_prec_t = typename float_prec_to_type<prec>::uint_type;
 
 namespace libHybractal {
 
-using hybf_float_t = float_by_prec_t<HYBRACTAL_FLT_PRECISION>;
+// using hybf_float_t = float_by_prec_t<HYBRACTAL_FLT_PRECISION>;
 using hybf_store_t = double;
 
-constexpr size_t compute_t_size_v = sizeof(std::complex<hybf_float_t>);
+// constexpr size_t compute_t_size_v = sizeof(std::complex<hybf_float_t>);
 
 constexpr int is_valid_precision(int p) noexcept {
   switch (p) {
@@ -177,36 +177,44 @@ constexpr int floatX_bits() {
   return precision * 32;
 }
 
-template <typename src_t, typename dst_t = hybf_float_t>
+template <typename dst_t>
+struct float_type_cast {
+  template <typename src_t>
+  inline static dst_t cast(const src_t &src) {
+    constexpr bool is_src_trival = std::is_trivial_v<src_t>;
+    constexpr bool is_dst_trival = std::is_trivial_v<dst_t>;
+
+    if constexpr (std::is_same_v<src_t, dst_t>) {
+      return src;
+    }
+
+    if constexpr (is_src_trival && is_dst_trival) {
+      return dst_t(src);
+    }
+
+    if constexpr (!is_src_trival && is_dst_trival) {
+      // convert from boost types to float/double
+      return src.template convert_to<dst_t>();
+    }
+
+    if constexpr (is_src_trival && !is_dst_trival) {
+      // convert from boost types to float/double
+      return dst_t(src);
+      // return src.template convert_to<dst_t>();
+    }
+
+    if constexpr (!is_src_trival && !is_dst_trival) {
+      // convert from boost types to boost types
+      return dst_t(src);
+    }
+    assert(false);
+    return {};
+  }
+};
+
+template <typename src_t, typename dst_t>
 inline dst_t float_type_cvt(const src_t &src) noexcept {
-  constexpr bool is_src_trival = std::is_trivial_v<src_t>;
-  constexpr bool is_dst_trival = std::is_trivial_v<dst_t>;
-
-  if constexpr (std::is_same_v<src_t, dst_t>) {
-    return src;
-  }
-
-  if constexpr (is_src_trival && is_dst_trival) {
-    return dst_t(src);
-  }
-
-  if constexpr (!is_src_trival && is_dst_trival) {
-    // convert from boost types to float/double
-    return src.template convert_to<dst_t>();
-  }
-
-  if constexpr (is_src_trival && !is_dst_trival) {
-    // convert from boost types to float/double
-    return dst_t(src);
-    // return src.template convert_to<dst_t>();
-  }
-
-  if constexpr (!is_src_trival && !is_dst_trival) {
-    // convert from boost types to boost types
-    return dst_t(src);
-  }
-  assert(false);
-  return {};
+  return float_type_cast<dst_t>::template cast<src_t>(src);
 }
 
 constexpr size_t float_bytes(int precision) noexcept {
@@ -262,10 +270,6 @@ float_t hex_to_float(const char *beg, const char *end, std::string &err,
 
   return variant_to_float<float_t>(var);
 }
-
-[[deprecated]] hybf_float_t any_type_to_compute_t(
-    const char *beg, const char *end, std::string &err,
-    bool *is_same_type = nullptr) noexcept;
 
 static constexpr uint16_t maxit_max = UINT16_MAX - 1;
 
@@ -447,10 +451,6 @@ constexpr uint64_t global_sequence_len =
 #include <fractal_map.h>
 
 namespace libHybractal {
-[[deprecated]] void compute_frame(
-    const fractal_utils::center_wind<hybf_float_t> &wind_C,
-    const uint16_t maxit, fractal_utils::fractal_map &map_age_u16,
-    fractal_utils::fractal_map *map_z_nullable) noexcept;
 
 void compute_frame_by_precision(
     const fractal_utils::wind_base &wind_C, int precision, const uint16_t maxit,

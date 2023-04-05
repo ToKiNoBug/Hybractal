@@ -45,13 +45,10 @@ int load(std::string_view filename) noexcept {
                       file.metainfo().sequence_bin,
                       file.metainfo().sequence_len);
 
-  cout << fmt::format(
-      "    center = {} + {} i, center_hex = {}\n",
-      libHybractal::float_type_cvt<libHybractal::hybf_float_t, double>(
-          file.metainfo().window().center[0]),
-      libHybractal::float_type_cvt<libHybractal::hybf_float_t, double>(
-          file.metainfo().window().center[1]),
-      file.metainfo().center_hex());
+  cout << fmt::format("    center = {} + {} i, center_hex = {}\n",
+                      file.metainfo().window_base().displayed_center()[0],
+                      file.metainfo().window_base().displayed_center()[1],
+                      file.metainfo().center_hex());
 
   return 0;
 }

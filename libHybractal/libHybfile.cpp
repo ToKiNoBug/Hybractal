@@ -95,9 +95,10 @@ decode_metainfo(const void *src, size_t bytes, std::string &err) noexcept {
     code = struct_pack::deserialize_to(temp, (const char *)src, bytes);
 
     if (code != struct_pack::errc::ok) {
-      err += fmt::format("Failed to deserialize to ::hybf_ir_new, detail: "
-                         "{}\n",
-                         int64_t(code));
+      err += fmt::format(
+          "Failed to deserialize to ::hybf_ir_new, detail: "
+          "{}\n",
+          int64_t(code));
     } else {
       err.clear();
       return temp;
@@ -107,9 +108,75 @@ decode_metainfo(const void *src, size_t bytes, std::string &err) noexcept {
   return {};
 }
 
-libHybractal::hybf_metainfo_new
-libHybractal::hybf_metainfo_new::parse_metainfo(const void *src, size_t bytes,
-                                                std::string &err) noexcept {
+#define HYBFILE_make_center_wind_variant_MAKE_CASE(precision)                \
+  case precision: {                                                          \
+    fractal_utils::center_wind<float_by_prec_t<precision>> temp;             \
+    if (bytes != sizeof(temp.center)) {                                      \
+      err = fmt::format(                                                     \
+          "The bytes of centerhex mismatch with center. Expected {} bytes, " \
+          "but actually {} bytes.",                                          \
+          sizeof(temp.center), bytes);                                       \
+      return {};                                                             \
+    }                                                                        \
+    memcpy(temp.center.data(), buffer, sizeof(temp.center));                 \
+    temp.x_span =                                                            \
+        libHybractal::float_type_cast<float_by_prec_t<precision>>::cast(     \
+            x_span);                                                         \
+    temp.y_span =                                                            \
+        libHybractal::float_type_cast<float_by_prec_t<precision>>::cast(     \
+            y_span);                                                         \
+    return temp;                                                             \
+  }
+
+libHybractal::center_wind_variant_t make_center_wind_variant(
+    std::string_view chx, double x_span, double y_span, int precision,
+    std::string &err) noexcept {
+  err.clear();
+  if (chx.starts_with("0x") || chx.starts_with("0X")) {
+    return make_center_wind_variant({chx.begin() + 2, chx.end()}, x_span,
+                                    y_span, precision, err);
+  }
+
+  if (!libHybractal::is_valid_precision(precision)) {
+    err = fmt::format("Invalid precision {}.", precision);
+    return {};
+  }
+
+  const size_t offset_bytes = libHybractal::float_bytes(precision);
+  const size_t offset_chars = offset_bytes * 2;
+  if (chx.length() != offset_chars) {
+    err = fmt::format(
+        "Length of center_hex is invalid. center_hex = \"{}\", length = {}, "
+        "but expected {} bytes.",
+        chx, chx.length(), offset_chars);
+    return {};
+  }
+
+  uint8_t buffer[4096];
+  auto bytes_opt = fractal_utils::hex_2_bin(chx, buffer, sizeof(buffer));
+
+  if (!bytes_opt.has_value()) {
+    err = fmt::format(
+        "Failed to decode center hex into binary, the center hex exceeds {} "
+        "bytes. This length is impossible.",
+        sizeof(buffer));
+    return {};
+  }
+
+  size_t bytes = bytes_opt.value();
+
+  switch (precision) {
+    HYBFILE_make_center_wind_variant_MAKE_CASE(1);
+    HYBFILE_make_center_wind_variant_MAKE_CASE(2);
+    HYBFILE_make_center_wind_variant_MAKE_CASE(4);
+    HYBFILE_make_center_wind_variant_MAKE_CASE(8);
+    default:
+      abort();
+  }
+}
+
+libHybractal::hybf_metainfo_new libHybractal::hybf_metainfo_new::parse_metainfo(
+    const void *src, size_t bytes, std::string &err) noexcept {
   auto temp = decode_metainfo(src, bytes, err);
 
   libHybractal::hybf_metainfo_new ret;
@@ -125,11 +192,10 @@ libHybractal::hybf_metainfo_new::parse_metainfo(const void *src, size_t bytes,
     ret.maxit = old.maxit;
     ret.rows = old.rows;
     ret.cols = old.cols;
-    ret.wind.center[0] = old.window_center[0];
-    ret.wind.center[1] = old.window_center[1];
-    ret.wind.x_span = old.window_xy_span[0];
-    ret.wind.y_span = old.window_xy_span[1];
-    ret.float_precision = 2;
+
+    ret.wind = make_center_wind_by_prec<2>(
+        {old.window_center[0], old.window_center[1]}, old.window_xy_span[0],
+        old.window_xy_span[1]);
 
     ret.chx.resize(4096);
 
@@ -148,56 +214,15 @@ libHybractal::hybf_metainfo_new::parse_metainfo(const void *src, size_t bytes,
   ret.rows = ir.rows;
   ret.cols = ir.cols;
   ret.chx = ir.center_hex;
-  ret.float_precision = ir.float_t_prec;
-  ret.wind.x_span = ir.window_xy_span[0];
-  ret.wind.y_span = ir.window_xy_span[1];
+  {
+    std::string mcwv_err{};
+    ret.wind = make_center_wind_variant(ir.center_hex, ir.window_xy_span[0],
+                                        ir.window_xy_span[1], ir.float_t_prec,
+                                        mcwv_err);
 
-  if (ir.float_t_prec == HYBRACTAL_FLT_PRECISION) {
-    auto bytes_opt = fractal_utils::hex_2_bin(
-        ir.center_hex, ret.wind.center.data(), sizeof(ret.wind.center));
-    if (!bytes_opt.has_value()) {
-      err = fmt::format("center_hex is invalid. Center_hex = \"{}\"",
-                        ir.center_hex);
-      return {};
-    }
-    if (bytes_opt.value() != sizeof(ret.wind.center)) {
-      err = fmt::format(
-          "center_hex is invalid. Center_hex = \"{}\",bytes = {}, but expected "
-          "{} bytes.",
-          ir.center_hex, bytes_opt.value(), sizeof(ret.wind.center));
-      return {};
-    }
-  } else {
-    const char *beg = ir.center_hex.c_str();
-    if (ir.center_hex.starts_with("0x")) {
-      beg += 2;
-    }
-
-    const size_t offset_bytes = float_bytes(ir.float_t_prec);
-    const size_t offset_chars = offset_bytes * 2;
-
-    const size_t len = strlen(beg);
-    if (len != offset_chars * 2) {
-      err = fmt::format(
-          "Length of center_hex is invalid. center_hex = \"{}\", length = {}, "
-          "but expected {} bytes.",
-          ir.center_hex, len, offset_chars);
-      return {};
-    }
-
-    std::string err_cvt[2];
-
-    ret.wind.center[0] =
-        any_type_to_compute_t(beg, beg + offset_chars, err_cvt[0]);
-    beg += offset_chars;
-    ret.wind.center[1] =
-        any_type_to_compute_t(beg, beg + offset_chars, err_cvt[1]);
-
-    if (!err_cvt[0].empty() || !err_cvt[1].empty()) {
-      err = fmt::format(
-          "One or more value in center hex failed to compute. Error 0 = "
-          "\"{}\", Error 1 = \"{}\"",
-          err_cvt[0], err_cvt[1]);
+    if (!mcwv_err.empty()) {
+      err = fmt::format("Failed to parse centerhex and xy span. Detail: {}",
+                        mcwv_err);
       return {};
     }
   }
@@ -205,30 +230,68 @@ libHybractal::hybf_metainfo_new::parse_metainfo(const void *src, size_t bytes,
   return ret;
 }
 
-libHybractal::hybf_ir_new
-libHybractal::hybf_metainfo_new::to_ir() const noexcept {
+fractal_utils::wind_base *libHybractal::extract_wind_base(
+    center_wind_variant_t &var) noexcept {
+  switch (var.index()) {
+    case 0:
+      return &std::get<0>(var);
+    case 1:
+      return &std::get<1>(var);
+    case 2:
+      return &std::get<2>(var);
+    case 3:
+      return &std::get<3>(var);
+    default:
+      return nullptr;
+  }
+}
+
+const fractal_utils::wind_base *libHybractal::extract_wind_base(
+    const center_wind_variant_t &var) noexcept {
+  switch (var.index()) {
+    case 0:
+      return &std::get<0>(var);
+    case 1:
+      return &std::get<1>(var);
+    case 2:
+      return &std::get<2>(var);
+    case 3:
+      return &std::get<3>(var);
+    default:
+      return nullptr;
+  }
+}
+
+libHybractal::hybf_ir_new libHybractal::hybf_metainfo_new::to_ir()
+    const noexcept {
   hybf_ir_new ir;
 
   ir.sequence_bin = this->sequence_bin;
   ir.sequence_len = this->sequence_len;
-  ir.window_xy_span[0] =
-      float_type_cvt<hybf_float_t, double>(this->wind.x_span);
-  assert(ir.window_xy_span[0] != 0);
-  ir.window_xy_span[1] =
-      float_type_cvt<hybf_float_t, double>(this->wind.y_span);
-  assert(ir.window_xy_span[1] != 0);
-
   ir.maxit = this->maxit;
   ir.rows = this->rows;
   ir.cols = this->cols;
-  ir.float_t_prec = this->float_precision;
+
+  auto base_ptr = extract_wind_base(this->wind);
+
+  ir.window_xy_span[0] = base_ptr->displayed_x_span();
+  assert(ir.window_xy_span[0] != 0);
+  ir.window_xy_span[1] = base_ptr->displayed_y_span();
+  assert(ir.window_xy_span[1] != 0);
+
+  ir.float_t_prec =
+      libHybractal::variant_index_to_precision(this->wind.index());
 
   if (this->chx.empty()) {
     std::string hex;
     hex.resize(4096);
-    auto ret = fractal_utils::bin_2_hex(this->wind.center.data(),
-                                        sizeof(this->wind.center), hex.data(),
-                                        hex.size(), true);
+
+    size_t bytes = 0;
+
+    const void *const data = base_ptr->center_data(&bytes);
+
+    auto ret =
+        fractal_utils::bin_2_hex(data, bytes, hex.data(), hex.size(), true);
 
     hex.resize(ret.value());
     ir.center_hex = hex;
@@ -239,10 +302,9 @@ libHybractal::hybf_metainfo_new::to_ir() const noexcept {
   return ir;
 }
 
-libHybractal::hybf_archive
-libHybractal::hybf_archive::load(std::string_view filename,
-                                 std::vector<uint8_t> &buffer, std::string *err,
-                                 const load_options &opt) noexcept {
+libHybractal::hybf_archive libHybractal::hybf_archive::load(
+    std::string_view filename, std::vector<uint8_t> &buffer, std::string *err,
+    const load_options &opt) noexcept {
   fractal_utils::binfile bfile;
 
   if (!bfile.parse_from_file(filename.data())) {

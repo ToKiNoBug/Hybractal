@@ -1,9 +1,9 @@
-#include <CLI11.hpp>
 #include <libHybfile.h>
 #include <libHybractal.h>
 
-int main(int argc, char **argv) {
+#include <CLI11.hpp>
 
+int main(int argc, char **argv) {
   size_t rows{0}, cols{0};
   fractal_utils::center_wind<double> wind;
 
@@ -27,10 +27,7 @@ int main(int argc, char **argv) {
 
   libHybractal::hybf_archive hf{rows, cols, save_mat_z};
 
-  hf.metainfo().wind.center[0] = wind.center[0];
-  hf.metainfo().wind.center[1] = wind.center[1];
-  hf.metainfo().wind.x_span = wind.x_span;
-  hf.metainfo().wind.y_span = wind.y_span;
+  hf.metainfo().wind = wind;
 
   if (!hf.save(filename)) {
     std::cout << "Failed to serialize" << std::endl;

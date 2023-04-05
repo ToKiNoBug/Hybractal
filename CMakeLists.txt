@@ -53,7 +53,7 @@ set(HYB_float256_backend boost CACHE STRING "The backend of 4 precision float. P
 add_compile_definitions("HYBRACTAL_SEQUENCE_STR=\"${HYB_sequence}\"")
 add_compile_definitions(_USE_MATH_DEFINES)
 add_compile_definitions("HYBRACTAL_VERSION=\"${PROJECT_VERSION}\"")
-add_compile_definitions("HYBRACTAL_FLT_PRECISION=${HYB_float_precision}")
+#add_compile_definitions("HYBRACTAL_FLT_PRECISION=${HYB_float_precision}")
 
 include(cmake/add_float128_backend_defines.cmake)
 include(cmake/add_float256_backend_defines.cmake)
