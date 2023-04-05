@@ -26,11 +26,11 @@ This file is part of Hybractal.
 
 #include "hybtool.h"
 
-libHybractal::center_wind_variant_t
-parse_wind(const CLI::Option *opt_hex, std::string_view hex,
-           const CLI::Option *opt_cf64, const std::array<double, 2> &f64,
-           const std::array<double, 2> &xy_span, int assigned_precision,
-           std::string &err) noexcept;
+libHybractal::center_wind_variant_t parse_wind(
+    const CLI::Option *opt_hex, std::string_view hex,
+    const CLI::Option *opt_cf64, const std::array<double, 2> &f64,
+    const std::array<double, 2> &xy_span, int assigned_precision,
+    std::string &err) noexcept;
 
 int main(int argc, char **argv) {
   CLI::App app;
@@ -248,9 +248,9 @@ int main(int argc, char **argv) {
   return 0;
 }
 
-libHybractal::center_wind_variant_t
-parse_chx(std::string_view hex, const std::array<double, 2> &xy_span,
-          int assigned_precison, std::string &err) noexcept {
+libHybractal::center_wind_variant_t parse_chx(
+    std::string_view hex, const std::array<double, 2> &xy_span,
+    int assigned_precison, std::string &err) noexcept {
   err.clear();
   if (hex.starts_with("0x") || hex.starts_with("0X")) {
     return parse_chx({hex.begin() + 2, hex.end()}, xy_span, assigned_precison,
@@ -259,7 +259,7 @@ parse_chx(std::string_view hex, const std::array<double, 2> &xy_span,
 
   const size_t length = hex.size();
 
-  const int precision = libHybractal::guess_precision(length / 4, true);
+  const int precision = libHybractal::guess_precision(length / 4, false);
 
   if (precision <= 0) {
     err = fmt::format(
@@ -283,17 +283,16 @@ parse_chx(std::string_view hex, const std::array<double, 2> &xy_span,
                                                 precision, false, err);
 }
 
-#define HYBTOOL_PRIVATE_MACRO_MATCH_PRECISION(precision)                       \
-  case (precision):                                                            \
-    return libHybractal::make_center_wind_by_prec<(precision)>(                \
-        {float_by_prec_t<(precision)>(f64[0]),                                 \
-         float_by_prec_t<(precision)>(f64[1])},                                \
+#define HYBTOOL_PRIVATE_MACRO_MATCH_PRECISION(precision)        \
+  case (precision):                                             \
+    return libHybractal::make_center_wind_by_prec<(precision)>( \
+        {float_by_prec_t<(precision)>(f64[0]),                  \
+         float_by_prec_t<(precision)>(f64[1])},                 \
         xy_span[0], xy_span[1]);
 
-libHybractal::center_wind_variant_t
-prase_cf64(const std::array<double, 2> &f64,
-           const std::array<double, 2> &xy_span, int assigned_precision,
-           std::string &err) noexcept {
+libHybractal::center_wind_variant_t prase_cf64(
+    const std::array<double, 2> &f64, const std::array<double, 2> &xy_span,
+    int assigned_precision, std::string &err) noexcept {
   if (!libHybractal::is_valid_precision(assigned_precision)) {
     err = fmt::format(
         "Invalid precision {}. You may have not assigned a value to precision. "
@@ -307,16 +306,16 @@ prase_cf64(const std::array<double, 2> &f64,
     HYBTOOL_PRIVATE_MACRO_MATCH_PRECISION(2);
     HYBTOOL_PRIVATE_MACRO_MATCH_PRECISION(4);
     HYBTOOL_PRIVATE_MACRO_MATCH_PRECISION(8);
-  default:
-    abort();
+    default:
+      abort();
   }
 }
 
-libHybractal::center_wind_variant_t
-parse_wind(const CLI::Option *opt_hex, std::string_view hex,
-           const CLI::Option *opt_cf64, const std::array<double, 2> &f64,
-           const std::array<double, 2> &xy_span, int assigned_precision,
-           std::string &err) noexcept {
+libHybractal::center_wind_variant_t parse_wind(
+    const CLI::Option *opt_hex, std::string_view hex,
+    const CLI::Option *opt_cf64, const std::array<double, 2> &f64,
+    const std::array<double, 2> &xy_span, int assigned_precision,
+    std::string &err) noexcept {
   err.clear();
 
   if (opt_hex->count()) {
