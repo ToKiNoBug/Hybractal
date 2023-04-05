@@ -1,10 +1,12 @@
-#include "videotool.h"
-#include <filesystem>
 #include <fmt/format.h>
 #include <hex_convert.h>
-#include <iostream>
 #include <libHybfile.h>
 #include <omp.h>
+
+#include <filesystem>
+#include <iostream>
+
+#include "videotool.h"
 
 using std::cout, std::cerr, std::endl;
 
@@ -18,16 +20,14 @@ bool run_compute(const common_info &common,
   libHybractal::hybf_archive archive(common.rows, common.cols, true);
 
   archive.metainfo().maxit = common.maxit;
-  archive.metainfo().wind.x_span = ctask.x_span;
-  archive.metainfo().wind.y_span = ctask.y_span;
 
   {
-    auto bytes = fractal_utils::hex_2_bin(
-        ctask.center_hex, archive.metainfo().wind.center.data(),
-        sizeof(archive.metainfo().wind.center));
-    if (!bytes.has_value() ||
-        bytes.value() != sizeof(archive.metainfo().wind.center)) {
-      cerr << fmt::format("Invalid center hex.") << endl;
+    std::string err;
+    archive.metainfo().wind = libHybractal::make_center_wind_variant(
+        ctask.center_hex, ctask.x_span, ctask.y_span, ctask.precision, err);
+
+    if (!err.empty()) {
+      cerr << fmt::format("Invalid center hex. Detail: {}", err) << endl;
       return false;
     }
   }
@@ -39,8 +39,13 @@ bool run_compute(const common_info &common,
   for (int fidx : frame_idxs) {
     const double factor = std::pow(common.ratio, -fidx);
 
-    archive.metainfo().wind.x_span = ctask.x_span * factor;
-    archive.metainfo().wind.y_span = ctask.y_span * factor;
+    auto update_xy_span = [ctask, factor](auto &wind) {
+      wind.x_span = ctask.x_span * factor;
+      wind.y_span = ctask.y_span * factor;
+    };
+
+    std::visit(update_xy_span, archive.metainfo().wind);
+
     cout << endl;
     std::string filename = hybf_filename(common, fidx);
     cout << fmt::format("[{:^6.1f}% : {:^3} / {:^3}] : {}",
@@ -50,8 +55,9 @@ bool run_compute(const common_info &common,
     auto mat_age = archive.map_age();
     auto mat_z = archive.map_z();
 
-    ::libHybractal::compute_frame(archive.metainfo().window(), common.maxit,
-                                  mat_age, &mat_z);
+    ::libHybractal::compute_frame_by_precision(archive.metainfo().window_base(),
+                                               archive.metainfo().precision(),
+                                               common.maxit, mat_age, &mat_z);
 
     const bool ok = archive.save(filename);
 
@@ -139,11 +145,9 @@ bool check_hybf_size(const libHybractal::hybf_archive &archive,
 
 std::vector<int> unfinished_tasks(const common_info &common,
                                   const compute_task &ct) noexcept {
-
   std::vector<uint8_t> need_compute;
   need_compute.resize(common.frame_num);
   for (int fidx = 0; fidx < common.frame_num; fidx++) {
-
     need_compute[fidx] = true;
   }
 
