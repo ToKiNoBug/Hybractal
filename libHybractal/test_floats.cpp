@@ -43,6 +43,19 @@ void test_float_X(float_by_prec_t<precision> flt) noexcept {
                            .value();
 
   assert(decoded_value == flt);
+
+  std::vector<uint8_t> binary;
+  binary.resize(encoded_bytes);
+  memcpy(binary.data(), buffer, encoded_bytes);
+
+  auto encoded_bytes_2 =
+      libHybractal::encode_float(decoded_value, buffer, sizeof(buffer)).value();
+
+  assert(encoded_bytes_2 == binary.size());
+
+  for (size_t idx = 0; idx < binary.size(); idx++) {
+    assert(buffer[idx] == binary[idx]);
+  }
 }
 
 int main() {
@@ -124,6 +137,8 @@ void test_bin(bool quiet) noexcept {
     print_bin(buffer, 64 / 8);
   }
   assert(*reinterpret_cast<const uint64_t *>(buffer) != u64);
+
+  // assert(0);
 }
 
 void test_float128(const bst_fl128 &val) noexcept {
