@@ -32,69 +32,6 @@ constexpr int guess_precision(size_t bytes, bool is_old) {
   return -1;
 }
 
-template <typename uintX_t>
-constexpr int uintX_precision() {
-  if constexpr (std::is_same_v<uintX_t, uint_by_prec_t<1>>) {
-    return 1;
-  }
-  if constexpr (std::is_same_v<uintX_t, uint_by_prec_t<2>>) {
-    return 2;
-  }
-  if constexpr (std::is_same_v<uintX_t, uint_by_prec_t<4>>) {
-    return 4;
-  }
-  if constexpr (std::is_same_v<uintX_t, uint_by_prec_t<8>>) {
-    return 8;
-  }
-
-  return -1;
-}
-
-template <typename flt_t>
-constexpr int floatX_precision() {
-  if constexpr (std::is_same_v<flt_t, float_by_prec_t<1>>) {
-    return 1;
-  }
-  if constexpr (std::is_same_v<flt_t, float_by_prec_t<2>>) {
-    return 2;
-  }
-  if constexpr (std::is_same_v<flt_t, float_by_prec_t<4>>) {
-    return 4;
-  }
-  if constexpr (std::is_same_v<flt_t, float_by_prec_t<8>>) {
-    return 8;
-  }
-
-  if constexpr (std::is_same_v<flt_t,
-                               boost::multiprecision::cpp_bin_float_quad>) {
-    return 4;
-  }
-
-#ifdef HYBRACTAL_FLOAT128_BACKEND_GCC_QUADMATH
-  if constexpr (std::is_same_v<flt_t, __float128>) {
-    return 4;
-  }
-#endif
-
-  return -1;
-}
-
-template <typename uintX_t>
-constexpr int uintX_bits() {
-  constexpr int precision = uintX_precision<uintX_t>();
-  static_assert(precision > 0);
-
-  return precision * 32;
-}
-
-template <typename fltX_t>
-constexpr int floatX_bits() {
-  constexpr int precision = floatX_precision<fltX_t>();
-  static_assert(precision > 0);
-
-  return precision * 32;
-}
-
 template <typename flt_t>
 concept is_boost_multiprecison_float = requires(const flt_t &flt) {
                                          requires !std::is_trivial_v<flt_t>;

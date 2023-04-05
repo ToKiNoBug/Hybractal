@@ -13,7 +13,8 @@
         "centerhex": "0x8d9aef6df402d03fafb69a745266eabf",
         "y-span": 4,
         // x-span is optional
-        "threads": 20
+        "threads": 20,
+        "precision": 2
     },
     "render": {
         "png-per-frame": 60,

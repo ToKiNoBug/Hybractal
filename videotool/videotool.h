@@ -34,6 +34,7 @@ struct compute_task {
   double y_span;
   double x_span{-1};
   int threads;
+  int precision;
 };
 
 struct render_task {

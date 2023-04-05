@@ -72,6 +72,111 @@ using hybf_store_t = double;
 
 constexpr size_t compute_t_size_v = sizeof(std::complex<hybf_float_t>);
 
+constexpr int is_valid_precision(int p) noexcept {
+  switch (p) {
+    case 1:
+    case 2:
+    case 4:
+    case 8:
+      return true;
+    default:
+      return false;
+  }
+}
+
+constexpr int precision_to_variant_index(int p) noexcept {
+  switch (p) {
+    case 1:
+      return 0;
+    case 2:
+      return 1;
+    case 4:
+      return 2;
+    case 8:
+      return 3;
+    default:
+      return -1;
+  }
+}
+
+constexpr int variant_index_to_precision(int i) noexcept {
+  switch (i) {
+    case 0:
+      return 1;
+    case 1:
+      return 2;
+    case 2:
+      return 4;
+    case 3:
+      return 8;
+    default:
+      return -1;
+  }
+}
+
+template <typename uintX_t>
+constexpr int uintX_precision() {
+  if constexpr (std::is_same_v<uintX_t, uint_by_prec_t<1>>) {
+    return 1;
+  }
+  if constexpr (std::is_same_v<uintX_t, uint_by_prec_t<2>>) {
+    return 2;
+  }
+  if constexpr (std::is_same_v<uintX_t, uint_by_prec_t<4>>) {
+    return 4;
+  }
+  if constexpr (std::is_same_v<uintX_t, uint_by_prec_t<8>>) {
+    return 8;
+  }
+
+  return -1;
+}
+
+template <typename flt_t>
+constexpr int floatX_precision() {
+  if constexpr (std::is_same_v<flt_t, float_by_prec_t<1>>) {
+    return 1;
+  }
+  if constexpr (std::is_same_v<flt_t, float_by_prec_t<2>>) {
+    return 2;
+  }
+  if constexpr (std::is_same_v<flt_t, float_by_prec_t<4>>) {
+    return 4;
+  }
+  if constexpr (std::is_same_v<flt_t, float_by_prec_t<8>>) {
+    return 8;
+  }
+
+  if constexpr (std::is_same_v<flt_t,
+                               boost::multiprecision::cpp_bin_float_quad>) {
+    return 4;
+  }
+
+#ifdef HYBRACTAL_FLOAT128_BACKEND_GCC_QUADMATH
+  if constexpr (std::is_same_v<flt_t, __float128>) {
+    return 4;
+  }
+#endif
+
+  return -1;
+}
+
+template <typename uintX_t>
+constexpr int uintX_bits() {
+  constexpr int precision = uintX_precision<uintX_t>();
+  static_assert(precision > 0);
+
+  return precision * 32;
+}
+
+template <typename fltX_t>
+constexpr int floatX_bits() {
+  constexpr int precision = floatX_precision<fltX_t>();
+  static_assert(precision > 0);
+
+  return precision * 32;
+}
+
 template <typename src_t, typename dst_t = hybf_float_t>
 inline dst_t float_type_cvt(const src_t &src) noexcept {
   constexpr bool is_src_trival = std::is_trivial_v<src_t>;
@@ -125,9 +230,42 @@ using float_variant_t = std::variant<float_by_prec_t<1>, float_by_prec_t<2>,
 float_variant_t hex_to_float(const char *beg, const char *end,
                              std::string &err) noexcept;
 
-hybf_float_t any_type_to_compute_t(const char *beg, const char *end,
-                                   std::string &err,
-                                   bool *is_same_type = nullptr) noexcept;
+template <typename float_t>
+float_t variant_to_float(const float_variant_t &var) noexcept {
+  switch (var.index()) {
+    case 0:
+      return float_type_cvt<float_by_prec_t<variant_index_to_precision(0)>,
+                            float_t>(std::get<0>(var));
+    case 1:
+      return float_type_cvt<float_by_prec_t<variant_index_to_precision(1)>,
+                            float_t>(std::get<1>(var));
+    case 2:
+      return float_type_cvt<float_by_prec_t<variant_index_to_precision(2)>,
+                            float_t>(std::get<2>(var));
+    case 3:
+      return float_type_cvt<float_by_prec_t<variant_index_to_precision(3)>,
+                            float_t>(std::get<3>(var));
+    default:
+      abort();
+  }
+}
+
+template <typename float_t>
+float_t hex_to_float(const char *beg, const char *end, std::string &err,
+                     bool *is_same_type) {
+  float_variant_t var = hex_to_float(beg, end, err);
+
+  if (is_same_type != nullptr) {
+    *is_same_type = (variant_index_to_precision(var.index()) ==
+                     floatX_precision<float_t>());
+  }
+
+  return variant_to_float<float_t>(var);
+}
+
+[[deprecated]] hybf_float_t any_type_to_compute_t(
+    const char *beg, const char *end, std::string &err,
+    bool *is_same_type = nullptr) noexcept;
 
 static constexpr uint16_t maxit_max = UINT16_MAX - 1;
 
@@ -309,10 +447,15 @@ constexpr uint64_t global_sequence_len =
 #include <fractal_map.h>
 
 namespace libHybractal {
-void compute_frame(const fractal_utils::center_wind<hybf_float_t> &wind_C,
-                   const uint16_t maxit,
-                   fractal_utils::fractal_map &map_age_u16,
-                   fractal_utils::fractal_map *map_z_nullable) noexcept;
+[[deprecated]] void compute_frame(
+    const fractal_utils::center_wind<hybf_float_t> &wind_C,
+    const uint16_t maxit, fractal_utils::fractal_map &map_age_u16,
+    fractal_utils::fractal_map *map_z_nullable) noexcept;
+
+void compute_frame_by_precision(
+    const fractal_utils::wind_base &wind_C, int precision, const uint16_t maxit,
+    fractal_utils::fractal_map &map_age_u16,
+    fractal_utils::fractal_map *map_z_nullable) noexcept;
 
 }  // namespace libHybractal
 

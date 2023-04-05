@@ -79,6 +79,9 @@ int main(int argc, char **argv) {
 
   double x_span_f64{-1}, y_span_f64{-1};
 
+  compute->add_option("--precision,-p", task_c.info.float_precision)
+      ->check(CLI::IsMember{{1, 2, 4, 8}})
+      ->required();
   compute
       ->add_option("--x-span,--span-x", x_span_f64,
                    "Range of x. Non-positive number means default value.")

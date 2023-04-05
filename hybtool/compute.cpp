@@ -16,9 +16,11 @@ This file is part of Hybractal.
     along with Hybractal.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include "hybtool.h"
 #include <fmt/format.h>
 #include <omp.h>
+
+#include "hybtool.h"
+
 
 bool run_compute(const task_compute &task) noexcept {
   omp_set_num_threads(task.threads);

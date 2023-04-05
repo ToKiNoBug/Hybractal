@@ -64,4 +64,4 @@ struct task_look {
 
 bool run_look(const task_look &task) noexcept;
 
-#endif // HYBRACTAL_HYBTOOL_HYBTOOL_H
+#endif  // HYBRACTAL_HYBTOOL_HYBTOOL_H

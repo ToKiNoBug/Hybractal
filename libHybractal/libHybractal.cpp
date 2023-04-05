@@ -83,10 +83,12 @@ libHybractal::hybf_float_t libHybractal::any_type_to_compute_t(
   return NAN;
 }
 
-void libHybractal::compute_frame(
-    const fractal_utils::center_wind<hybf_float_t> &wind_C,
-    const uint16_t maxit, fractal_utils::fractal_map &map_age_u16,
-    fractal_utils::fractal_map *map_z) noexcept {
+template <typename float_t>
+void compute_frame_private(const fractal_utils::center_wind<float_t> &wind_C,
+                           const uint16_t maxit,
+                           fractal_utils::fractal_map &map_age_u16,
+                           fractal_utils::fractal_map *map_z) noexcept {
+  using namespace libHybractal;
   if (map_z != nullptr) {
     assert(map_z->rows == map_age_u16.rows);
     assert(map_z->cols == map_age_u16.cols);
@@ -97,18 +99,18 @@ void libHybractal::compute_frame(
 
   assert(maxit <= libHybractal::maxit_max);
 
-  const std::complex<hybf_float_t> left_top{wind_C.left_top_corner()[0],
-                                            wind_C.left_top_corner()[1]};
-  const hybf_float_t r_unit = -wind_C.y_span / map_age_u16.rows;
-  const hybf_float_t c_unit = wind_C.x_span / map_age_u16.cols;
+  const std::complex<float_t> left_top{wind_C.left_top_corner()[0],
+                                       wind_C.left_top_corner()[1]};
+  const float_t r_unit = -wind_C.y_span / map_age_u16.rows;
+  const float_t c_unit = wind_C.x_span / map_age_u16.cols;
 
 #pragma omp parallel for schedule(dynamic)
   for (size_t r = 0; r < map_age_u16.rows; r++) {
-    const hybf_float_t imag = left_top.imag() + r * r_unit;
+    const float_t imag = left_top.imag() + r * r_unit;
     for (size_t c = 0; c < map_age_u16.cols; c++) {
-      const hybf_float_t real = left_top.real() + c * c_unit;
-      std::complex<hybf_float_t> z{0, 0};
-      const std::complex<hybf_float_t> C{real, imag};
+      const float_t real = left_top.real() + c * c_unit;
+      std::complex<float_t> z{0, 0};
+      const std::complex<float_t> C{real, imag};
 
       int age = DECLARE_HYBRACTAL_SEQUENCE(HYBRACTAL_SEQUENCE_STR)::compute_age(
           z, C, maxit);
@@ -120,15 +122,56 @@ void libHybractal::compute_frame(
       map_age_u16.at<uint16_t>(r, c) = static_cast<uint16_t>(age);
 
       if (map_z != nullptr) {
-        if constexpr (std::is_trivial_v<hybf_float_t>) {
+        if constexpr (std::is_trivial_v<float_t>) {
           map_z->at<std::complex<hybf_store_t>>(r, c).real(double(z.real()));
           map_z->at<std::complex<hybf_store_t>>(r, c).imag(double(z.imag()));
         } else {
           auto &cplx = map_z->at<std::complex<hybf_store_t>>(r, c);
-          cplx.real(float_type_cvt<hybf_float_t, hybf_store_t>(z.real()));
-          cplx.imag(float_type_cvt<hybf_float_t, hybf_store_t>(z.imag()));
+          cplx.real(float_type_cvt<float_t, hybf_store_t>(z.real()));
+          cplx.imag(float_type_cvt<float_t, hybf_store_t>(z.imag()));
         }
       }
     }
+  }
+}
+
+void libHybractal::compute_frame(
+    const fractal_utils::center_wind<hybf_float_t> &wind_C,
+    const uint16_t maxit, fractal_utils::fractal_map &map_age_u16,
+    fractal_utils::fractal_map *map_z) noexcept {
+  compute_frame_private(wind_C, maxit, map_age_u16, map_z);
+}
+
+void libHybractal::compute_frame_by_precision(
+    const fractal_utils::wind_base &wind_C, int precision, const uint16_t maxit,
+    fractal_utils::fractal_map &map_age_u16,
+    fractal_utils::fractal_map *map_z) noexcept {
+  switch (precision) {
+    case 1:
+      compute_frame_private(
+          dynamic_cast<const fractal_utils::center_wind<float_by_prec_t<1>> &>(
+              wind_C),
+          maxit, map_age_u16, map_z);
+      break;
+    case 2:
+      compute_frame_private(
+          dynamic_cast<const fractal_utils::center_wind<float_by_prec_t<2>> &>(
+              wind_C),
+          maxit, map_age_u16, map_z);
+      break;
+    case 4:
+      compute_frame_private(
+          dynamic_cast<const fractal_utils::center_wind<float_by_prec_t<4>> &>(
+              wind_C),
+          maxit, map_age_u16, map_z);
+      break;
+    case 8:
+      compute_frame_private(
+          dynamic_cast<const fractal_utils::center_wind<float_by_prec_t<8>> &>(
+              wind_C),
+          maxit, map_age_u16, map_z);
+      break;
+    default:
+      abort();
   }
 }

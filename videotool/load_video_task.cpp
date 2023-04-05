@@ -128,6 +128,13 @@ compute_task parse_compute(const njson &jo) noexcept(false) {
     throw std::runtime_error{fmt::format("threads = {}", ret.threads)};
   }
 
+  ret.precision = jo.at("precision");
+
+  if (!libHybractal::is_valid_precision(ret.precision)) {
+    throw std::runtime_error{
+        fmt::format("{} is not a valid precision.", ret.precision)};
+  }
+
   return ret;
 }
 
