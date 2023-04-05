@@ -42,6 +42,12 @@ bool export_fun(const fractal_utils::fractal_map &map_fractal,
                 const fractal_utils::fractal_map &map_u8c3_do_not_resize,
                 const char *filename);
 
+std::string centerhex_encode_fun(const fractal_utils::wind_base &wind_src,
+                                 std::string &err);
+void centerhex_decode_fun(std::string_view hex,
+                          fractal_utils::wind_base &wind_dest,
+                          std::string &err);
+
 struct metainfo4gui_s {
   libHybractal::hybf_metainfo_new info;
   fractal_utils::fractal_map mat_z{0, 0, 16};
@@ -53,11 +59,11 @@ struct metainfo4gui_s {
 metainfo4gui_s get_info_struct(std::string_view filename,
                                std::string_view json) noexcept;
 
-#define ZOOMER_PRIVATE_MATCH_PRECISION(precision)                \
-  case (precision):                                              \
-    window_ptr.reset(new fractal_utils::mainwindow(              \
-        float_by_prec_t<(precision)>(0.0), nullptr, window_size, \
-        sizeof(uint16_t)));                                      \
+#define ZOOMER_PRIVATE_MATCH_PRECISION(precision)                              \
+  case (precision):                                                            \
+    window_ptr.reset(new fractal_utils::mainwindow(                            \
+        float_by_prec_t<(precision)>(0.0), nullptr, window_size,               \
+        sizeof(uint16_t)));                                                    \
     break;
 
 int main(int argc, char **argv) {
@@ -100,16 +106,19 @@ int main(int argc, char **argv) {
     ZOOMER_PRIVATE_MATCH_PRECISION(2);
     ZOOMER_PRIVATE_MATCH_PRECISION(4);
     ZOOMER_PRIVATE_MATCH_PRECISION(8);
-    default:
-      abort();
+  default:
+    abort();
   }
-
-  window_ptr->set_window(metainfo.info.window_base());
-  window_ptr->display_range();
 
   window_ptr->callback_compute_fun = compute_fun;
   window_ptr->callback_render_fun = render_fun;
   window_ptr->callback_export_fun = export_fun;
+
+  window_ptr->callback_hex_encode_fun = centerhex_encode_fun;
+  window_ptr->callback_hex_decode_fun = centerhex_decode_fun;
+
+  window_ptr->set_window(metainfo.info.window_base());
+  window_ptr->display_range();
 
   window_ptr->frame_file_extension_list = "*.hybf";
 
@@ -157,7 +166,8 @@ void compute_fun(const fractal_utils::wind_base &__wind, void *custom_ptr,
   }
 
   auto *metainfo = reinterpret_cast<metainfo4gui_s *>(custom_ptr);
-  if (false) std::cout << "maxit = " << metainfo->info.maxit << std::endl;
+  if (false)
+    std::cout << "maxit = " << metainfo->info.maxit << std::endl;
 
   libHybractal::compute_frame_by_precision(__wind, metainfo->info.precision(),
                                            metainfo->info.maxit, *map_fractal,
@@ -197,4 +207,104 @@ bool export_fun(const fractal_utils::fractal_map &map_fractal,
          metainfo->mat_z.byte_count());
 
   return archive.save(filename);
+}
+
+#include <float_encode.hpp>
+
+#define ZOOMER_PRIVATE_MACRO_MATCH_BYTES(precision, binary_bytes, buffer)      \
+  case (sizeof(float_by_prec_t<precision>) * 2): {                             \
+    const auto &wind = dynamic_cast<                                           \
+        const fractal_utils::center_wind<float_by_prec_t<precision>> &>(       \
+        wind_src);                                                             \
+    binary_bytes =                                                             \
+        libHybractal::encode_array2(wind.center, buffer, sizeof(buffer))       \
+            .value();                                                          \
+  } break;
+
+std::string centerhex_encode_fun(const fractal_utils::wind_base &wind_src,
+                                 std::string &err) {
+  size_t center_bytes = 0;
+
+  wind_src.center_data(&center_bytes);
+
+  uint8_t buffer[4096];
+  size_t binary_bytes = 0;
+  try {
+    switch (center_bytes) {
+      ZOOMER_PRIVATE_MACRO_MATCH_BYTES(1, binary_bytes, buffer);
+      ZOOMER_PRIVATE_MACRO_MATCH_BYTES(2, binary_bytes, buffer);
+      ZOOMER_PRIVATE_MACRO_MATCH_BYTES(4, binary_bytes, buffer);
+      ZOOMER_PRIVATE_MACRO_MATCH_BYTES(8, binary_bytes, buffer);
+
+    default:
+      err = fmt::format("Unknown center bytes: {}", center_bytes);
+      return err;
+    }
+
+    if (binary_bytes <= 0) {
+      throw std::runtime_error{fmt::format(
+          "Failed to encode array2. binary_bytes = {}", binary_bytes)};
+    }
+  } catch (std::exception &e) {
+    err = fmt::format("Failed to encode centerhex. Detail: {}", e.what());
+    return err;
+  }
+
+  std::string hex;
+
+  hex.resize(4096);
+
+  auto chars = fractal_utils::bin_2_hex(buffer, binary_bytes, hex.data(),
+                                        hex.size(), true)
+                   .value();
+
+  hex.resize(chars);
+  return hex;
+}
+
+#define ZOOMER_PRIVATE_MATCH_PRECISION_2(precision, wind_dst, buffer,          \
+                                         bin_bytes)                            \
+  case precision:                                                              \
+    dynamic_cast<fractal_utils::center_wind<float_by_prec_t<precision>> &>(    \
+        wind_dst)                                                              \
+        .center = libHybractal::decode_array2<float_by_prec_t<precision>>(     \
+                      buffer, bin_bytes)                                       \
+                      .value();                                                \
+    break;
+
+void centerhex_decode_fun(std::string_view hex,
+                          fractal_utils::wind_base &wind_dst,
+                          std::string &err) {
+  err.clear();
+  size_t center_bytes = 0;
+  wind_dst.center_data(&center_bytes);
+  const int precision = libHybractal::guess_precision(center_bytes / 2, true);
+
+  if (!libHybractal::is_valid_precision(precision)) {
+    err = "Failed to deduce precision.";
+    return;
+  }
+
+  uint8_t buffer[4096];
+  const auto bin_bytes_opt =
+      fractal_utils::hex_2_bin(hex, buffer, sizeof(buffer));
+
+  if (!bin_bytes_opt.has_value()) {
+    err = "Failed to decode hex to binary.";
+    return;
+  }
+
+  const size_t bin_bytes = bin_bytes_opt.value();
+  try {
+    switch (precision) {
+      ZOOMER_PRIVATE_MATCH_PRECISION_2(1, wind_dst, buffer, bin_bytes);
+      ZOOMER_PRIVATE_MATCH_PRECISION_2(2, wind_dst, buffer, bin_bytes);
+      ZOOMER_PRIVATE_MATCH_PRECISION_2(4, wind_dst, buffer, bin_bytes);
+      ZOOMER_PRIVATE_MATCH_PRECISION_2(8, wind_dst, buffer, bin_bytes);
+    default:
+      abort();
+    }
+  } catch (std::exception &e) {
+    err = fmt::format("Failed to decode center hex. Detail: {}", e.what());
+  }
 }

@@ -18,7 +18,7 @@ unset(compiler_path)
 
 message(STATUS "CMAKE_CXX_COMPILER = " ${CMAKE_CXX_COMPILER})
 
-set(HYB_fractal_utils_ver 2.2.3)
+set(HYB_fractal_utils_ver 2.2.4)
 
 # message(STATUS "Before include: CMAKE_INSTALL_PREFIX = ${CMAKE_INSTALL_PREFIX}")
 # set(HYB_INSTALL_PREFIX_archive ${CMAKE_INSTALL_PREFIX})

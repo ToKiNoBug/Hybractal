@@ -103,7 +103,10 @@ std::string parse_input(std::string_view sv, int input_gen, int precision,
       float_by_prec_t<precision> val =                                         \
           libHybractal::float_type_cvt<decltype(ir),                           \
                                        float_by_prec_t<precision>>(ir);        \
-      bytes = fractal_utils::bin_2_hex(&val, sizeof(val), hex.data(),          \
+      uint8_t buffer[4096];                                                    \
+      const size_t bin_bytes =                                                 \
+          libHybractal::encode_float(val, buffer, sizeof(buffer)).value();     \
+      bytes = fractal_utils::bin_2_hex(buffer, bin_bytes, hex.data(),          \
                                        hex.size(), false);                     \
     }                                                                          \
     break;                                                                     \

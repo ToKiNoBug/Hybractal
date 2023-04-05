@@ -36,6 +36,8 @@ void test_float_X(float_by_prec_t<precision> flt) noexcept {
   auto encoded_bytes =
       libHybractal::encode_float(flt, buffer, buffer_capacity).value();
 
+  assert(encoded_bytes == precision * sizeof(float));
+
   auto decoded_value = libHybractal::decode_float<float_by_prec_t<precision>>(
                            buffer, encoded_bytes)
                            .value();
