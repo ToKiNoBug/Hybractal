@@ -81,11 +81,10 @@ int main(int argc, char **argv) {
 
   double x_span_f64{-1}, y_span_f64{-1};
 
-  int precision;
+  int precision{-1};
 
   compute->add_option("--precision,-p", precision)
-      ->check(CLI::IsMember{{1, 2, 4, 8}})
-      ->required();
+      ->check(CLI::IsMember{{1, 2, 4, 8}});
   compute
       ->add_option("--x-span,--span-x", x_span_f64,
                    "Range of x. Non-positive number means default value.")
@@ -199,7 +198,7 @@ int main(int argc, char **argv) {
   if (show_config) {
     std::cout << fmt::format(
                      "Configured with : HYBRACTAL_SEQUENCE_STR = {}. Float128 "
-                     "backend is {}, float256 backend is {}.\n"
+                     "backend = {}, float256 backend = {}.\n"
                      "CMAKE_BUILD_TYPE = {}",
                      HYBRACTAL_SEQUENCE_STR, HYBRACTAL_FLOAT128_BACKEND,
                      HYBRACTAL_FLOAT256_BACKEND, HYB_CMAKE_BUILD_TYPE)
@@ -257,13 +256,13 @@ libHybractal::center_wind_variant_t parse_chx(
 
   const size_t length = hex.size();
 
-  const int precision = libHybractal::guess_precision(length / 2 * 2, true);
+  const int precision = libHybractal::guess_precision(length / 4, true);
 
   if (precision <= 0) {
     err = fmt::format(
         "Failed to deduce precision. The bytes of single floating-point number "
         "is {}.",
-        length / 2 * 2);
+        length / 4);
     return {};
   }
 
@@ -292,7 +291,10 @@ libHybractal::center_wind_variant_t prase_cf64(
     const std::array<double, 2> &f64, const std::array<double, 2> &xy_span,
     int assigned_precision, std::string &err) noexcept {
   if (!libHybractal::is_valid_precision(assigned_precision)) {
-    err = fmt::format("Invalid precision {}", assigned_precision);
+    err = fmt::format(
+        "Invalid precision {}. You may have not assigned a value to precision. "
+        "This is required when center is assigned with floating point numbers.",
+        assigned_precision);
     return {};
   }
 
@@ -314,6 +316,13 @@ libHybractal::center_wind_variant_t parse_wind(
   err.clear();
 
   if (opt_hex->count()) {
+    if (opt_cf64->count()) {
+      std::cout
+          << "Warning: Both center and center-hex is assigned. The value for "
+             "center will be ignored."
+          << std::endl;
+    }
+
     return parse_chx(hex, xy_span, assigned_precision, err);
   } else {
     if (opt_cf64->count() <= 0) {

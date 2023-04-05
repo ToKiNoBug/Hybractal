@@ -30,3 +30,6 @@ file(COPY ${CMAKE_SOURCE_DIR}/libRender/render1.json
 install(TARGETS hybtool
     RUNTIME DESTINATION bin
     LIBRARY DESTINATION lib)
+
+add_test(NAME hybtool-compute-1
+    COMMAND hybtool --rows 720 --cols 1080 --center 0 0 --precision 1 -o hybtool-compute-1.hybf)
