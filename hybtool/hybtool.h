@@ -63,6 +63,7 @@ struct task_look {
   bool show_center_hex{false};
   bool show_maxit{false};
   bool show_precision{false};
+  bool show_generation{false};
   std::string extract_age_compressed{""};
   std::string extract_age_decompress{""};
   std::string extract_z_compressed{""};
@@ -71,4 +72,4 @@ struct task_look {
 
 bool run_look(const task_look &task) noexcept;
 
-#endif  // HYBRACTAL_HYBTOOL_HYBTOOL_H
+#endif // HYBRACTAL_HYBTOOL_HYBTOOL_H

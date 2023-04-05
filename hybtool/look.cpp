@@ -100,6 +100,12 @@ bool run_look(const task_look &task) noexcept {
     cout << endl;
   }
 
+  if (task.show_generation || task.show_all) {
+    cout << fmt::format("File format generation = {}\n",
+                        (int)metainfo.generation());
+    cout << endl;
+  }
+
   const auto blk_age =
       binfile.find_block_single(libHybractal::hybf_archive::seg_id::id_mat_age);
 
@@ -149,9 +155,9 @@ bool run_look(const task_look &task) noexcept {
            << endl;
       return false;
     }
-    if (!export_bin_file(
-            task.extract_z_decompress, archive.mat_z_data().data(),
-            archive.mat_z_data().size() * sizeof(archive.mat_z_data()[0]))) {
+    if (!export_bin_file(task.extract_z_decompress, archive.mat_z_data().data(),
+                         archive.mat_z_data().size() *
+                             sizeof(archive.mat_z_data()[0]))) {
       return false;
     }
   }

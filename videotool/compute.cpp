@@ -24,7 +24,8 @@ bool run_compute(const common_info &common,
   {
     std::string err;
     archive.metainfo().wind = libHybractal::make_center_wind_variant(
-        ctask.center_hex, ctask.x_span, ctask.y_span, ctask.precision, err);
+        ctask.center_hex, ctask.x_span, ctask.y_span, ctask.precision, false,
+        err);
 
     if (!err.empty()) {
       cerr << fmt::format("Invalid center hex. Detail: {}", err) << endl;

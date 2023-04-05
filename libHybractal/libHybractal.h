@@ -19,23 +19,19 @@
 #include <variant>
 #include <vector>
 
-template <size_t prec>
-struct float_prec_to_type {};
+template <size_t prec> struct float_prec_to_type {};
 
-template <>
-struct float_prec_to_type<1> {
+template <> struct float_prec_to_type<1> {
   using type = float;
   using uint_type = uint32_t;
 };
 
-template <>
-struct float_prec_to_type<2> {
+template <> struct float_prec_to_type<2> {
   using type = double;
   using uint_type = uint64_t;
 };
 
-template <>
-struct float_prec_to_type<4> {
+template <> struct float_prec_to_type<4> {
 #ifdef HYBRACTAL_FLOAT128_BACKEND_BOOST
   using type = boost::multiprecision::cpp_bin_float_quad;
 #endif
@@ -48,8 +44,7 @@ struct float_prec_to_type<4> {
   using uint_type = boost::multiprecision::uint128_t;
 };
 
-template <>
-struct float_prec_to_type<8> {
+template <> struct float_prec_to_type<8> {
 #ifdef HYBRACTAL_FLOAT256_BACKEND_BOOST
   using type = boost::multiprecision::cpp_bin_float_oct;
 #endif
@@ -74,48 +69,47 @@ using hybf_store_t = double;
 
 constexpr int is_valid_precision(int p) noexcept {
   switch (p) {
-    case 1:
-    case 2:
-    case 4:
-    case 8:
-      return true;
-    default:
-      return false;
+  case 1:
+  case 2:
+  case 4:
+  case 8:
+    return true;
+  default:
+    return false;
   }
 }
 
 constexpr int precision_to_variant_index(int p) noexcept {
   switch (p) {
-    case 1:
-      return 0;
-    case 2:
-      return 1;
-    case 4:
-      return 2;
-    case 8:
-      return 3;
-    default:
-      return -1;
+  case 1:
+    return 0;
+  case 2:
+    return 1;
+  case 4:
+    return 2;
+  case 8:
+    return 3;
+  default:
+    return -1;
   }
 }
 
 constexpr int variant_index_to_precision(int i) noexcept {
   switch (i) {
-    case 0:
-      return 1;
-    case 1:
-      return 2;
-    case 2:
-      return 4;
-    case 3:
-      return 8;
-    default:
-      return -1;
+  case 0:
+    return 1;
+  case 1:
+    return 2;
+  case 2:
+    return 4;
+  case 3:
+    return 8;
+  default:
+    return -1;
   }
 }
 
-template <typename uintX_t>
-constexpr int uintX_precision() {
+template <typename uintX_t> constexpr int uintX_precision() {
   if constexpr (std::is_same_v<uintX_t, uint_by_prec_t<1>>) {
     return 1;
   }
@@ -132,8 +126,7 @@ constexpr int uintX_precision() {
   return -1;
 }
 
-template <typename flt_t>
-constexpr int floatX_precision() {
+template <typename flt_t> constexpr int floatX_precision() {
   if constexpr (std::is_same_v<flt_t, float_by_prec_t<1>>) {
     return 1;
   }
@@ -161,26 +154,22 @@ constexpr int floatX_precision() {
   return -1;
 }
 
-template <typename uintX_t>
-constexpr int uintX_bits() {
+template <typename uintX_t> constexpr int uintX_bits() {
   constexpr int precision = uintX_precision<uintX_t>();
   static_assert(precision > 0);
 
   return precision * 32;
 }
 
-template <typename fltX_t>
-constexpr int floatX_bits() {
+template <typename fltX_t> constexpr int floatX_bits() {
   constexpr int precision = floatX_precision<fltX_t>();
   static_assert(precision > 0);
 
   return precision * 32;
 }
 
-template <typename dst_t>
-struct float_type_cast {
-  template <typename src_t>
-  inline static dst_t cast(const src_t &src) {
+template <typename dst_t> struct float_type_cast {
+  template <typename src_t> inline static dst_t cast(const src_t &src) {
     constexpr bool is_src_trival = std::is_trivial_v<src_t>;
     constexpr bool is_dst_trival = std::is_trivial_v<dst_t>;
 
@@ -219,49 +208,59 @@ inline dst_t float_type_cvt(const src_t &src) noexcept {
 
 constexpr size_t float_bytes(int precision) noexcept {
   switch (precision) {
-    case 1:
-      return sizeof(float_by_prec_t<1>);
-    case 2:
-      return sizeof(float_by_prec_t<2>);
-    case 4:
-      return sizeof(float_by_prec_t<4>);
-    case 8:
-      return sizeof(float_by_prec_t<8>);
-    default:
-      return SIZE_MAX;
+  case 1:
+    return sizeof(float_by_prec_t<1>);
+  case 2:
+    return sizeof(float_by_prec_t<2>);
+  case 4:
+    return sizeof(float_by_prec_t<4>);
+  case 8:
+    return sizeof(float_by_prec_t<8>);
+  default:
+    return SIZE_MAX;
   }
 }
 
 using float_variant_t = std::variant<float_by_prec_t<1>, float_by_prec_t<2>,
                                      float_by_prec_t<4>, float_by_prec_t<8>>;
 
-float_variant_t hex_to_float(const char *beg, const char *end,
-                             std::string &err) noexcept;
+float_variant_t hex_to_float_old(std::string_view hex,
+                                 std::string &err) noexcept;
+
+float_variant_t hex_to_float_new(std::string_view sv,
+                                 std::string &err) noexcept;
+
+float_variant_t hex_to_float_by_gen(std::string_view hex, int8_t gen,
+                                    std::string &err) noexcept;
 
 template <typename float_t>
 float_t variant_to_float(const float_variant_t &var) noexcept {
   switch (var.index()) {
-    case 0:
-      return float_type_cvt<float_by_prec_t<variant_index_to_precision(0)>,
-                            float_t>(std::get<0>(var));
-    case 1:
-      return float_type_cvt<float_by_prec_t<variant_index_to_precision(1)>,
-                            float_t>(std::get<1>(var));
-    case 2:
-      return float_type_cvt<float_by_prec_t<variant_index_to_precision(2)>,
-                            float_t>(std::get<2>(var));
-    case 3:
-      return float_type_cvt<float_by_prec_t<variant_index_to_precision(3)>,
-                            float_t>(std::get<3>(var));
-    default:
-      abort();
+  case 0:
+    return float_type_cvt<float_by_prec_t<variant_index_to_precision(0)>,
+                          float_t>(std::get<0>(var));
+  case 1:
+    return float_type_cvt<float_by_prec_t<variant_index_to_precision(1)>,
+                          float_t>(std::get<1>(var));
+  case 2:
+    return float_type_cvt<float_by_prec_t<variant_index_to_precision(2)>,
+                          float_t>(std::get<2>(var));
+  case 3:
+    return float_type_cvt<float_by_prec_t<variant_index_to_precision(3)>,
+                          float_t>(std::get<3>(var));
+  default:
+    abort();
   }
 }
 
 template <typename float_t>
-float_t hex_to_float(const char *beg, const char *end, std::string &err,
-                     bool *is_same_type) {
-  float_variant_t var = hex_to_float(beg, end, err);
+float_t hex_to_float_by_gen(std::string_view hex, int8_t gen, std::string &err,
+                            bool *is_same_type) {
+  float_variant_t var = hex_to_float_by_gen(hex, gen, err);
+
+  if (!err.empty()) {
+    return NAN;
+  }
 
   if (is_same_type != nullptr) {
     *is_same_type = (variant_index_to_precision(var.index()) ==
@@ -274,23 +273,24 @@ float_t hex_to_float(const char *beg, const char *end, std::string &err,
 static constexpr uint16_t maxit_max = UINT16_MAX - 1;
 
 template <typename float_t>
-inline std::complex<float_t> iterate_mandelbrot(
-    std::complex<float_t> z, const std::complex<float_t> &C) noexcept {
+inline std::complex<float_t>
+iterate_mandelbrot(std::complex<float_t> z,
+                   const std::complex<float_t> &C) noexcept {
   return z * z + C;
 }
 namespace internal {
-template <typename flt_t>
-inline auto abs(flt_t val) {
+template <typename flt_t> inline auto abs(flt_t val) {
   if (val >= 0) {
     return val;
   }
   return -val;
 }
-}  // namespace internal
+} // namespace internal
 
 template <typename float_t>
-inline std::complex<float_t> iterate_burningship(
-    std::complex<float_t> z, const std::complex<float_t> &C) noexcept {
+inline std::complex<float_t>
+iterate_burningship(std::complex<float_t> z,
+                    const std::complex<float_t> &C) noexcept {
   z.real(internal::abs(z.real()));
   z.imag(internal::abs(z.imag()));
 
@@ -312,8 +312,7 @@ inline bool is_norm2_over_4(const std::complex<float_t> &z) noexcept {
   return (z.real() * z.real() + z.imag() * z.imag()) >= 4;
 }
 
-template <size_t N>
-using const_str = char[N];
+template <size_t N> using const_str = char[N];
 
 template <size_t N>
 constexpr bool is_valid_string(const const_str<N> &str) noexcept {
@@ -326,8 +325,7 @@ constexpr bool is_valid_string(const const_str<N> &str) noexcept {
   return true;
 }
 
-template <uint64_t bin, size_t len>
-struct sequence {
+template <uint64_t bin, size_t len> struct sequence {
   static constexpr uint64_t binary = bin;
   static constexpr size_t length = len;
 
@@ -438,15 +436,15 @@ constexpr uint64_t static_strlen(const const_str<N> &str) noexcept {
   return N - 1;
 }
 
-#define DECLARE_HYBRACTAL_SEQUENCE(str)                                  \
-  ::libHybractal::template sequence<::libHybractal::convert_to_bin(str), \
+#define DECLARE_HYBRACTAL_SEQUENCE(str)                                        \
+  ::libHybractal::template sequence<::libHybractal::convert_to_bin(str),       \
                                     ::libHybractal::static_strlen(str)>
 
 constexpr uint64_t global_sequence_bin =
     ::libHybractal::convert_to_bin(HYBRACTAL_SEQUENCE_STR);
 constexpr uint64_t global_sequence_len =
     ::libHybractal::static_strlen(HYBRACTAL_SEQUENCE_STR);
-}  // namespace libHybractal
+} // namespace libHybractal
 
 #include <fractal_map.h>
 
@@ -457,6 +455,6 @@ void compute_frame_by_precision(
     fractal_utils::fractal_map &map_age_u16,
     fractal_utils::fractal_map *map_z_nullable) noexcept;
 
-}  // namespace libHybractal
+} // namespace libHybractal
 
-#endif  // HYBRACTAL_LIBHYBRACTAL_H
+#endif // HYBRACTAL_LIBHYBRACTAL_H

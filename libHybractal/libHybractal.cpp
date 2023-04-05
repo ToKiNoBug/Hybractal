@@ -1,24 +1,22 @@
+#include "libHybractal.h"
+#include "float_encode.hpp"
 #include <assert.h>
 #include <fmt/format.h>
 #include <hex_convert.h>
 #include <omp.h>
 
-#include "libHybractal.h"
-
-#define HYBRACTAL_PRIVATE_MATCH_TYPE(precision, buffer, bytes)              \
-  if ((bytes) == sizeof(float_by_prec_t<(precision)>)) {                    \
-    return *reinterpret_cast<const float_by_prec_t<(precision)> *>(buffer); \
+#define HYBRACTAL_PRIVATE_MATCH_TYPE_OLD(precision, buffer, bytes)             \
+  if ((bytes) == sizeof(float_by_prec_t<(precision)>)) {                       \
+    return *reinterpret_cast<const float_by_prec_t<(precision)> *>(buffer);    \
   }
 
-std::variant<float_by_prec_t<1>, float_by_prec_t<2>, float_by_prec_t<4>,
-             float_by_prec_t<8>>
-libHybractal::hex_to_float(const char *beg, const char *end,
-                           std::string &err) noexcept {
+libHybractal::float_variant_t
+libHybractal::hex_to_float_old(std::string_view hex,
+                               std::string &err) noexcept {
   err.clear();
-  if (std::string_view{beg, end}.starts_with("0x")) {
-    beg += 2;
+  if (hex.starts_with("0x") || hex.starts_with("0X")) {
+    return hex_to_float_new({hex.begin() + 2, hex.end()}, err);
   }
-  std::string_view hex{beg, end};
 
   uint8_t buffer[4096];
   memset(buffer, 0, sizeof(buffer));
@@ -34,14 +32,71 @@ libHybractal::hex_to_float(const char *beg, const char *end,
 
   const size_t size = bytes.value();
 
-  HYBRACTAL_PRIVATE_MATCH_TYPE(1, buffer, size);
-  HYBRACTAL_PRIVATE_MATCH_TYPE(2, buffer, size);
-  HYBRACTAL_PRIVATE_MATCH_TYPE(4, buffer, size);
-  HYBRACTAL_PRIVATE_MATCH_TYPE(8, buffer, size);
+  HYBRACTAL_PRIVATE_MATCH_TYPE_OLD(1, buffer, size);
+  HYBRACTAL_PRIVATE_MATCH_TYPE_OLD(2, buffer, size);
+  HYBRACTAL_PRIVATE_MATCH_TYPE_OLD(4, buffer, size);
+  HYBRACTAL_PRIVATE_MATCH_TYPE_OLD(8, buffer, size);
 
   err = fmt::format(
       "Invalid floating point bytes({}), the related hex string is \"{}\"",
       size, hex);
+  return NAN;
+}
+
+#define HYBRACTAL_PRIVATE_MATCH_TYPE_NEW(precision, buffer, bytes)             \
+  if ((bytes) == (precision * sizeof(float))) {                                \
+    return decode_float<float_by_prec_t<precision>>(buffer, bytes).value();    \
+  }
+
+libHybractal::float_variant_t
+libHybractal::hex_to_float_new(std::string_view hex,
+                               std::string &err) noexcept {
+  err.clear();
+  if (hex.starts_with("0x") || hex.starts_with("0X")) {
+    return hex_to_float_new({hex.begin() + 2, hex.end()}, err);
+  }
+
+  uint8_t buffer[4096];
+  memset(buffer, 0, sizeof(buffer));
+
+  auto bytes = fractal_utils::hex_2_bin(hex, buffer, sizeof(buffer));
+
+  if (!bytes.has_value()) {
+    err = fmt::format(
+        "Failed to decode hex to binary. The hex string is \"{}\", length = {}",
+        hex, hex.length());
+    return NAN;
+  }
+
+  const size_t size = bytes.value();
+  try {
+    HYBRACTAL_PRIVATE_MATCH_TYPE_NEW(1, buffer, size);
+    HYBRACTAL_PRIVATE_MATCH_TYPE_NEW(2, buffer, size);
+    HYBRACTAL_PRIVATE_MATCH_TYPE_NEW(4, buffer, size);
+    HYBRACTAL_PRIVATE_MATCH_TYPE_NEW(8, buffer, size);
+  } catch (std::exception &e) {
+    err = fmt::format("Failed to decode float new. Detail: {}", err);
+    return NAN;
+  }
+
+  err = fmt::format(
+      "Invalid floating point bytes({}), the related hex string is \"{}\"",
+      size, hex);
+  return NAN;
+}
+
+libHybractal::float_variant_t
+libHybractal::hex_to_float_by_gen(std::string_view hex, int8_t gen,
+                                  std::string &err) noexcept {
+  if (gen == 0) {
+    return hex_to_float_old(hex, err);
+  }
+
+  if (gen == 1) {
+    return hex_to_float_new(hex, err);
+  }
+
+  err = fmt::format("Unknown generation {}.", int(gen));
   return NAN;
 }
 
@@ -102,31 +157,31 @@ void libHybractal::compute_frame_by_precision(
     fractal_utils::fractal_map &map_age_u16,
     fractal_utils::fractal_map *map_z) noexcept {
   switch (precision) {
-    case 1:
-      compute_frame_private(
-          dynamic_cast<const fractal_utils::center_wind<float_by_prec_t<1>> &>(
-              wind_C),
-          maxit, map_age_u16, map_z);
-      break;
-    case 2:
-      compute_frame_private(
-          dynamic_cast<const fractal_utils::center_wind<float_by_prec_t<2>> &>(
-              wind_C),
-          maxit, map_age_u16, map_z);
-      break;
-    case 4:
-      compute_frame_private(
-          dynamic_cast<const fractal_utils::center_wind<float_by_prec_t<4>> &>(
-              wind_C),
-          maxit, map_age_u16, map_z);
-      break;
-    case 8:
-      compute_frame_private(
-          dynamic_cast<const fractal_utils::center_wind<float_by_prec_t<8>> &>(
-              wind_C),
-          maxit, map_age_u16, map_z);
-      break;
-    default:
-      abort();
+  case 1:
+    compute_frame_private(
+        dynamic_cast<const fractal_utils::center_wind<float_by_prec_t<1>> &>(
+            wind_C),
+        maxit, map_age_u16, map_z);
+    break;
+  case 2:
+    compute_frame_private(
+        dynamic_cast<const fractal_utils::center_wind<float_by_prec_t<2>> &>(
+            wind_C),
+        maxit, map_age_u16, map_z);
+    break;
+  case 4:
+    compute_frame_private(
+        dynamic_cast<const fractal_utils::center_wind<float_by_prec_t<4>> &>(
+            wind_C),
+        maxit, map_age_u16, map_z);
+    break;
+  case 8:
+    compute_frame_private(
+        dynamic_cast<const fractal_utils::center_wind<float_by_prec_t<8>> &>(
+            wind_C),
+        maxit, map_age_u16, map_z);
+    break;
+  default:
+    abort();
   }
 }

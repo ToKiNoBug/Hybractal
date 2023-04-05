@@ -168,7 +168,7 @@ flt_t decode_boost_floatX(const void *src) noexcept {
 
   return result;
 }
-}  // namespace internal
+} // namespace internal
 
 template <typename uintX_t>
 std::optional<size_t> encode_uintX(const uintX_t &bin, void *dst,
@@ -278,6 +278,56 @@ std::optional<flt_t> decode_float(const void *src, size_t bytes) noexcept {
   return std::nullopt;
 }
 
-}  // namespace libHybractal
+template <typename flt_t>
+std::optional<size_t> encode_array2(const std::array<flt_t, 2> &src, void *dst,
+                                    size_t capacity) noexcept {
+  try {
+    auto first_bytes = encode_float(src[0], dst, capacity).value();
+    auto next_bytes = encode_float(src[1], dst, capacity - first_bytes).value();
+    return first_bytes + next_bytes;
+  } catch (...) {
+    return std::nullopt;
+  }
+}
 
-#endif  // HYBRACTAL_LIBHYRACTAL_FLOATENCODE_HPP
+template <typename flt_t>
+std::optional<size_t> encode_complex(const std::complex<flt_t> &src, void *dst,
+                                     size_t capacity) noexcept {
+  return encode_array2({src.real(), src.imag()}, dst, capacity);
+}
+
+template <typename flt_t>
+std::optional<std::array<flt_t, 2>> decode_array2(const void *src,
+                                                  size_t bytes) noexcept {
+  if (bytes % 2 != 0) {
+    return std::nullopt;
+  }
+
+  const size_t offset = bytes / 2;
+  std::array<flt_t, 2> ret;
+  try {
+    ret[0] = decode_float<flt_t>(src, offset).value();
+    ret[1] =
+        decode_float<flt_t>(((const uint8_t *)src + offset), offset).value();
+  } catch (...) {
+    return std::nullopt;
+  }
+
+  return ret;
+}
+
+template <typename flt_t>
+std::optional<std::complex<flt_t>> decode_complex(const void *src,
+                                                  size_t bytes) noexcept {
+  auto array2 = decode_array2<flt_t>(src, bytes);
+
+  if (array2.has_value()) {
+    auto temp = array2.value();
+    return std::complex<flt_t>{temp[0], temp[1]};
+  }
+  return std::nullopt;
+}
+
+} // namespace libHybractal
+
+#endif // HYBRACTAL_LIBHYRACTAL_FLOATENCODE_HPP
