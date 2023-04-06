@@ -72,4 +72,11 @@ struct task_look {
 
 bool run_look(const task_look &task) noexcept;
 
-#endif // HYBRACTAL_HYBTOOL_HYBTOOL_H
+struct task_update {
+  std::vector<std::string> files;
+  bool keep{false};
+};
+
+bool run_update(const task_update &task) noexcept;
+
+#endif  // HYBRACTAL_HYBTOOL_HYBTOOL_H

@@ -196,6 +196,17 @@ int main(int argc, char **argv) {
       ->check(!CLI::ExistingFile);
 
   //////////////////////////////////////
+
+  task_update task_u;
+
+  CLI::App *update = app.add_subcommand("update");
+  update->add_option("files", task_u.files, "Files to update.")
+      ->check(CLI::ExistingFile & is_hybf)
+      ->required();
+  update->add_flag("--keep,-k", task_u.keep, "Keep the original file.")
+      ->default_val(false);
+
+  //////////////////////////////////////
   CLI11_PARSE(app, argc, argv);
 
   if (show_config) {
@@ -239,6 +250,13 @@ int main(int argc, char **argv) {
   if (look->count() > 0) {
     if (!run_look(task_l)) {
       std::cout << "Failed to lookup." << std::endl;
+      return 1;
+    }
+  }
+
+  if (update->count() > 0) {
+    if (!run_update(task_u)) {
+      std::cout << "Failed to update." << std::endl;
       return 1;
     }
   }

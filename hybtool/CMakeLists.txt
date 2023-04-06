@@ -11,7 +11,8 @@ add_executable(hybtool
     hybtool.cpp
     compute.cpp
     render.cpp
-    look.cpp)
+    look.cpp
+    update.cpp)
 
 target_link_libraries(hybtool PRIVATE
     Hybractal
