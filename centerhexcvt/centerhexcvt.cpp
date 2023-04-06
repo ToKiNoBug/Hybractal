@@ -1,8 +1,28 @@
-#include <CLI11.hpp>
-#include <float_encode.hpp>
+/*
+ Copyright © 2023  TokiNoBug
+This file is part of Hybractal.
+
+    Hybractal is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Hybractal is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Hybractal.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
 #include <fmt/format.h>
 #include <hex_convert.h>
 #include <libHybractal.h>
+
+#include <CLI11.hpp>
+#include <float_encode.hpp>
+
 
 std::string parse_input(std::string_view, int input_gen, int precision,
                         bool format_as_hex, std::string &err) noexcept;
@@ -89,27 +109,27 @@ std::string parse_input(std::string_view sv, int input_gen, int precision,
   return str1 + str2;
 }
 
-#define CENTERHEXCONVERT_MATCH_INDEX(index, var, val_for_format, ir)           \
-  case (index): {                                                              \
-    auto val = std::get<(index)>(var);                                         \
-    val_for_format = double(val);                                              \
-    ir = libHybractal::float_type_cvt<std::decay_t<decltype(val)>,             \
-                                      float_by_prec_t<8>>(val);                \
+#define CENTERHEXCONVERT_MATCH_INDEX(index, var, val_for_format, ir) \
+  case (index): {                                                    \
+    auto val = std::get<(index)>(var);                               \
+    val_for_format = double(val);                                    \
+    ir = libHybractal::float_type_cvt<std::decay_t<decltype(val)>,   \
+                                      float_by_prec_t<8>>(val);      \
   } break;
 
-#define CHX_MATCH_PRECISION(ir, precision, hex, bytes)                         \
-  case (precision): {                                                          \
-    {                                                                          \
-      float_by_prec_t<precision> val =                                         \
-          libHybractal::float_type_cvt<decltype(ir),                           \
-                                       float_by_prec_t<precision>>(ir);        \
-      uint8_t buffer[4096];                                                    \
-      const size_t bin_bytes =                                                 \
-          libHybractal::encode_float(val, buffer, sizeof(buffer)).value();     \
-      bytes = fractal_utils::bin_2_hex(buffer, bin_bytes, hex.data(),          \
-                                       hex.size(), false);                     \
-    }                                                                          \
-    break;                                                                     \
+#define CHX_MATCH_PRECISION(ir, precision, hex, bytes)                     \
+  case (precision): {                                                      \
+    {                                                                      \
+      float_by_prec_t<precision> val =                                     \
+          libHybractal::float_type_cvt<decltype(ir),                       \
+                                       float_by_prec_t<precision>>(ir);    \
+      uint8_t buffer[4096];                                                \
+      const size_t bin_bytes =                                             \
+          libHybractal::encode_float(val, buffer, sizeof(buffer)).value(); \
+      bytes = fractal_utils::bin_2_hex(buffer, bin_bytes, hex.data(),      \
+                                       hex.size(), false);                 \
+    }                                                                      \
+    break;                                                                 \
   }
 
 std::string format_variant(const libHybractal::float_variant_t &var,
@@ -122,8 +142,8 @@ std::string format_variant(const libHybractal::float_variant_t &var,
     CENTERHEXCONVERT_MATCH_INDEX(1, var, val_for_format, ir);
     CENTERHEXCONVERT_MATCH_INDEX(2, var, val_for_format, ir);
     CENTERHEXCONVERT_MATCH_INDEX(3, var, val_for_format, ir);
-  default:
-    abort();
+    default:
+      abort();
   }
 
   if (is_hex) {
@@ -136,8 +156,8 @@ std::string format_variant(const libHybractal::float_variant_t &var,
       CHX_MATCH_PRECISION(ir, 2, hex, bytes);
       CHX_MATCH_PRECISION(ir, 4, hex, bytes);
       CHX_MATCH_PRECISION(ir, 8, hex, bytes);
-    default:
-      abort();
+      default:
+        abort();
     }
 
     if (!bytes.has_value()) {

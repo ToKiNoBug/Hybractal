@@ -1,3 +1,21 @@
+/*
+ Copyright © 2023  TokiNoBug
+This file is part of Hybractal.
+
+    Hybractal is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Hybractal is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Hybractal.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
 #ifndef HYBRACTAL_LIBHYBFILE_H
 #define HYBRACTAL_LIBHYBFILE_H
 
@@ -52,9 +70,9 @@ using center_wind_variant_t =
                  fractal_utils::center_wind<float_by_prec_t<8>>>;
 
 template <typename float_t>
-fractal_utils::center_wind<float_t>
-make_center_wind(const std::complex<float_t> &center, const float_t &x_span,
-                 const float_t &y_span) noexcept {
+fractal_utils::center_wind<float_t> make_center_wind(
+    const std::complex<float_t> &center, const float_t &x_span,
+    const float_t &y_span) noexcept {
   fractal_utils::center_wind<float_t> ret;
 
   ret.center = {center.real(), center.imag()};
@@ -65,17 +83,17 @@ make_center_wind(const std::complex<float_t> &center, const float_t &x_span,
   return ret;
 }
 
-fractal_utils::wind_base *
-extract_wind_base(center_wind_variant_t &var) noexcept;
+fractal_utils::wind_base *extract_wind_base(
+    center_wind_variant_t &var) noexcept;
 
-const fractal_utils::wind_base *
-extract_wind_base(const center_wind_variant_t &var) noexcept;
+const fractal_utils::wind_base *extract_wind_base(
+    const center_wind_variant_t &var) noexcept;
 
 template <int precision>
-fractal_utils::center_wind<float_by_prec_t<precision>>
-make_center_wind_by_prec(const std::complex<float_by_prec_t<precision>> &center,
-                         const float_by_prec_t<precision> &x_span,
-                         const float_by_prec_t<precision> &y_span) noexcept {
+fractal_utils::center_wind<float_by_prec_t<precision>> make_center_wind_by_prec(
+    const std::complex<float_by_prec_t<precision>> &center,
+    const float_by_prec_t<precision> &x_span,
+    const float_by_prec_t<precision> &y_span) noexcept {
   return make_center_wind(center, x_span, y_span);
 }
 
@@ -85,7 +103,7 @@ center_wind_variant_t make_center_wind_variant(std::string_view chx,
                                                std::string &err) noexcept;
 
 struct hybf_metainfo_new {
-public:
+ public:
   uint64_t sequence_bin{::libHybractal::convert_to_bin(HYBRACTAL_SEQUENCE_STR)};
   uint64_t sequence_len{::libHybractal::static_strlen(HYBRACTAL_SEQUENCE_STR)};
   center_wind_variant_t wind;
@@ -93,11 +111,11 @@ public:
   size_t cols{0};
   int maxit{100};
 
-private:
+ private:
   int8_t file_genration{1};
   std::string chx{};
 
-public:
+ public:
   inline int8_t generation() const noexcept { return this->file_genration; }
   inline const auto &window() const noexcept { return this->wind; }
 
@@ -118,6 +136,8 @@ public:
   inline int precision() const noexcept {
     return libHybractal::variant_index_to_precision(this->wind.index());
   }
+
+  void update_generation() noexcept;
 };
 
 struct load_options {
@@ -127,19 +147,19 @@ struct load_options {
 };
 
 class hybf_archive {
-private:
+ private:
   hybf_metainfo_new m_info;
   std::vector<uint16_t> data_age;
   std::vector<std::complex<hybf_store_t>> data_z;
 
-public:
+ public:
   enum seg_id : int64_t {
     id_metainfo = 666,
     id_mat_age = 114514,
     id_mat_z = 1919810,
   };
 
-public:
+ public:
   hybf_archive() : hybf_archive(0, 0, false) {}
   explicit hybf_archive(size_t rows, size_t cols, bool have_z);
   auto &metainfo() noexcept { return this->m_info; }
@@ -194,6 +214,6 @@ std::vector<uint8_t> compress(const void *src, size_t bytes) noexcept;
 void decompress(const void *src, size_t src_bytes,
                 std::vector<uint8_t> &dest) noexcept;
 
-} // namespace libHybractal
+}  // namespace libHybractal
 
-#endif // HYBRACTAL_LIBHYBFILE_H
+#endif  // HYBRACTAL_LIBHYBFILE_H

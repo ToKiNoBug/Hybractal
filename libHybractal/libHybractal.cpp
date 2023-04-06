@@ -1,18 +1,37 @@
-#include "libHybractal.h"
-#include "float_encode.hpp"
+/*
+ Copyright © 2023  TokiNoBug
+This file is part of Hybractal.
+
+    Hybractal is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Hybractal is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Hybractal.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
 #include <assert.h>
 #include <fmt/format.h>
 #include <hex_convert.h>
 #include <omp.h>
 
-#define HYBRACTAL_PRIVATE_MATCH_TYPE_OLD(precision, buffer, bytes)             \
-  if ((bytes) == sizeof(float_by_prec_t<(precision)>)) {                       \
-    return *reinterpret_cast<const float_by_prec_t<(precision)> *>(buffer);    \
+#include "float_encode.hpp"
+#include "libHybractal.h"
+
+
+#define HYBRACTAL_PRIVATE_MATCH_TYPE_OLD(precision, buffer, bytes)          \
+  if ((bytes) == sizeof(float_by_prec_t<(precision)>)) {                    \
+    return *reinterpret_cast<const float_by_prec_t<(precision)> *>(buffer); \
   }
 
-libHybractal::float_variant_t
-libHybractal::hex_to_float_old(std::string_view hex,
-                               std::string &err) noexcept {
+libHybractal::float_variant_t libHybractal::hex_to_float_old(
+    std::string_view hex, std::string &err) noexcept {
   err.clear();
   if (hex.starts_with("0x") || hex.starts_with("0X")) {
     return hex_to_float_new({hex.begin() + 2, hex.end()}, err);
@@ -43,14 +62,13 @@ libHybractal::hex_to_float_old(std::string_view hex,
   return NAN;
 }
 
-#define HYBRACTAL_PRIVATE_MATCH_TYPE_NEW(precision, buffer, bytes)             \
-  if ((bytes) == (precision * sizeof(float))) {                                \
-    return decode_float<float_by_prec_t<precision>>(buffer, bytes).value();    \
+#define HYBRACTAL_PRIVATE_MATCH_TYPE_NEW(precision, buffer, bytes)          \
+  if ((bytes) == (precision * sizeof(float))) {                             \
+    return decode_float<float_by_prec_t<precision>>(buffer, bytes).value(); \
   }
 
-libHybractal::float_variant_t
-libHybractal::hex_to_float_new(std::string_view hex,
-                               std::string &err) noexcept {
+libHybractal::float_variant_t libHybractal::hex_to_float_new(
+    std::string_view hex, std::string &err) noexcept {
   err.clear();
   if (hex.starts_with("0x") || hex.starts_with("0X")) {
     return hex_to_float_new({hex.begin() + 2, hex.end()}, err);
@@ -85,9 +103,8 @@ libHybractal::hex_to_float_new(std::string_view hex,
   return NAN;
 }
 
-libHybractal::float_variant_t
-libHybractal::hex_to_float_by_gen(std::string_view hex, int8_t gen,
-                                  std::string &err) noexcept {
+libHybractal::float_variant_t libHybractal::hex_to_float_by_gen(
+    std::string_view hex, int8_t gen, std::string &err) noexcept {
   if (gen == 0) {
     return hex_to_float_old(hex, err);
   }
@@ -157,31 +174,31 @@ void libHybractal::compute_frame_by_precision(
     fractal_utils::fractal_map &map_age_u16,
     fractal_utils::fractal_map *map_z) noexcept {
   switch (precision) {
-  case 1:
-    compute_frame_private(
-        dynamic_cast<const fractal_utils::center_wind<float_by_prec_t<1>> &>(
-            wind_C),
-        maxit, map_age_u16, map_z);
-    break;
-  case 2:
-    compute_frame_private(
-        dynamic_cast<const fractal_utils::center_wind<float_by_prec_t<2>> &>(
-            wind_C),
-        maxit, map_age_u16, map_z);
-    break;
-  case 4:
-    compute_frame_private(
-        dynamic_cast<const fractal_utils::center_wind<float_by_prec_t<4>> &>(
-            wind_C),
-        maxit, map_age_u16, map_z);
-    break;
-  case 8:
-    compute_frame_private(
-        dynamic_cast<const fractal_utils::center_wind<float_by_prec_t<8>> &>(
-            wind_C),
-        maxit, map_age_u16, map_z);
-    break;
-  default:
-    abort();
+    case 1:
+      compute_frame_private(
+          dynamic_cast<const fractal_utils::center_wind<float_by_prec_t<1>> &>(
+              wind_C),
+          maxit, map_age_u16, map_z);
+      break;
+    case 2:
+      compute_frame_private(
+          dynamic_cast<const fractal_utils::center_wind<float_by_prec_t<2>> &>(
+              wind_C),
+          maxit, map_age_u16, map_z);
+      break;
+    case 4:
+      compute_frame_private(
+          dynamic_cast<const fractal_utils::center_wind<float_by_prec_t<4>> &>(
+              wind_C),
+          maxit, map_age_u16, map_z);
+      break;
+    case 8:
+      compute_frame_private(
+          dynamic_cast<const fractal_utils::center_wind<float_by_prec_t<8>> &>(
+              wind_C),
+          maxit, map_age_u16, map_z);
+      break;
+    default:
+      abort();
   }
 }

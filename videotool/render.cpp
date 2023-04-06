@@ -1,12 +1,33 @@
-#include "videotool.h"
-#include <atomic>
-#include <filesystem>
+/*
+ Copyright © 2023  TokiNoBug
+This file is part of Hybractal.
+
+    Hybractal is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Hybractal is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Hybractal.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
 #include <fmt/format.h>
-#include <iostream>
 #include <libRender.h>
-#include <mutex>
 #include <omp.h>
 #include <png_utils.h>
+
+#include <atomic>
+#include <filesystem>
+#include <iostream>
+#include <mutex>
+
+#include "videotool.h"
+
 
 using std::cout, std::cerr, std::endl;
 
@@ -120,10 +141,10 @@ bool run_render(const common_info &ci, const render_task &rt) noexcept {
     rendered_frame_counter++;
   }
 
-  cout << fmt::format("[{:^6.1f}% : {:^3} / {:^3}] : All tasks finished({} "
-                      "finished with error).",
-                      100.0f, rendered_frame_counter, ci.frame_num,
-                      error_counter)
+  cout << fmt::format(
+              "[{:^6.1f}% : {:^3} / {:^3}] : All tasks finished({} "
+              "finished with error).",
+              100.0f, rendered_frame_counter, ci.frame_num, error_counter)
        << endl;
 
   return error_counter == 0;

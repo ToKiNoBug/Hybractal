@@ -1,3 +1,21 @@
+/*
+ Copyright © 2023  TokiNoBug
+This file is part of Hybractal.
+
+    Hybractal is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Hybractal is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Hybractal.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
 #ifndef HYBRACTAL_LIBHYRACTAL_FLOATENCODE_HPP
 #define HYBRACTAL_LIBHYRACTAL_FLOATENCODE_HPP
 
@@ -168,7 +186,7 @@ flt_t decode_boost_floatX(const void *src) noexcept {
 
   return result;
 }
-} // namespace internal
+}  // namespace internal
 
 template <typename uintX_t>
 std::optional<size_t> encode_uintX(const uintX_t &bin, void *dst,
@@ -328,6 +346,6 @@ std::optional<std::complex<flt_t>> decode_complex(const void *src,
   return std::nullopt;
 }
 
-} // namespace libHybractal
+}  // namespace libHybractal
 
-#endif // HYBRACTAL_LIBHYRACTAL_FLOATENCODE_HPP
+#endif  // HYBRACTAL_LIBHYRACTAL_FLOATENCODE_HPP

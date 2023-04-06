@@ -1,3 +1,21 @@
+/*
+ Copyright © 2023  TokiNoBug
+This file is part of Hybractal.
+
+    Hybractal is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Hybractal is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Hybractal.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
 #include <fmt/format.h>
 #include <libHybractal.h>
 
@@ -6,10 +24,21 @@
 #include <float_encode.hpp>
 #include <iostream>
 
+namespace bmp = boost::multiprecision;
+
 using std::cout, std::endl;
+
+template <int bits, int exp_bits>
+using bst_floatX = bmp::number<bmp::backends::cpp_bin_float<
+    bits - exp_bits, bmp::digit_base_2, void, int32_t,
+    -((int64_t(1) << exp_bits) - 2), (int64_t(1) << exp_bits) - 1>>;
 
 using bst_fl128 = boost::multiprecision::cpp_bin_float_quad;
 using bst_fl256 = boost::multiprecision::cpp_bin_float_oct;
+using bst_fl512 = bst_floatX<512, 23>;
+using bst_fl1024 = bst_floatX<1024, 27>;
+using bst_fl2048 = bst_floatX<2048, 31>;
+
 using boost::multiprecision::uint128_t;
 using boost::multiprecision::uint256_t;
 
@@ -59,6 +88,7 @@ void test_float_X(float_by_prec_t<precision> flt) noexcept {
 }
 
 int main() {
+  constexpr size_t f512sz = sizeof(bst_fl512);
   test_bin(true);
   test_float128(bst_fl128(1) / 3);
   test_float128(bst_fl128(-1) / 3);
