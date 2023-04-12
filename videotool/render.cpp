@@ -28,7 +28,6 @@ This file is part of Hybractal.
 
 #include "videotool.h"
 
-
 using std::cout, std::cerr, std::endl;
 
 std::vector<int> pngs_missing(const common_info &ci,
@@ -48,33 +47,8 @@ bool run_render(const common_info &ci, const render_task &rt) noexcept {
   }
 
   // read archives and check
-  std::vector<libHybractal::hybf_archive> archives;
-  archives.reserve(ci.frame_num);
-
-  {
-    std::vector<uint8_t> buffer;
-    for (int fidx = 0; fidx < ci.frame_num; fidx++) {
-      bool exists;
-      std::string filename = hybf_filename(ci, fidx);
-      libHybractal::hybf_archive temp;
-      check_hybf_option opt;
-      opt.move_archive = &temp;
-      opt.nocheck_sequence = true;
-
-      if (!check_hybf(filename, ci, buffer, exists, opt)) {
-        if (exists) {
-          cerr << fmt::format("Source file {} exists, but it is invalid.",
-                              filename)
-               << endl;
-        } else {
-          cerr << fmt::format("Source file {} is missing.", filename) << endl;
-        }
-        return false;
-      }
-
-      archives.emplace_back(std::move(temp));
-    }
-  }
+  // std::vector<libHybractal::hybf_archive> archives;
+  // archives.reserve(ci.frame_num);
 
   const auto frames_to_render = pngs_missing(ci, rt);
 
@@ -101,8 +75,29 @@ bool run_render(const common_info &ci, const render_task &rt) noexcept {
       exit(1);
     }
     thread_local fractal_utils::fractal_map mat_u8c3(ci.rows, ci.cols, 3);
+    thread_local std::vector<uint8_t> buffer;
 
-    auto &archive = archives[fidx];
+    libHybractal::hybf_archive archive;
+    {
+      bool exists;
+      std::string filename = hybf_filename(ci, fidx);
+      check_hybf_option opt;
+      opt.move_archive = &archive;
+      opt.nocheck_sequence = true;
+
+      if (!check_hybf(filename, ci, buffer, exists, opt)) {
+        if (exists) {
+          cerr << fmt::format("Source file {} exists, but it is invalid.",
+                              filename)
+               << endl;
+        } else {
+          cerr << fmt::format("Source file {} is missing.", filename) << endl;
+        }
+        continue;
+      }
+    }
+
+    // auto &archive = archives[fidx];
     libHybractal::render_hsv(archive.map_age(), archive.map_z(), mat_u8c3,
                              render, gpu_rcs);
     std::vector<const void *> row_ptrs;

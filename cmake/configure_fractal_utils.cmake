@@ -7,6 +7,8 @@ endif()
 
 include(FetchContent)
 
+set(FractalUtils_no_install TRUE)
+
 FetchContent_Declare(fractal_utils
     GIT_REPOSITORY https://github.com/ToKiNoBug/FractalUtils.git
 
