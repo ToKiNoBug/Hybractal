@@ -65,6 +65,8 @@ int main(int argc, char **argv) {
   compute->add_option("--maxit", task_c.info.maxit, "Max iteration")
       ->default_val(1024)
       ->check(CLI::Range(uint16_t(1), libHybractal::maxit_max));
+  compute->add_flag("--gpu", task_c.gpu, "Compute by cuda.")
+      ->default_val(false);
 
   std::string center_hex;
 

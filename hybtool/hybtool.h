@@ -28,6 +28,7 @@ struct task_compute {
   uint16_t threads{1};
   bool save_mat_z{false};
   bool bechmark{false};
+  bool gpu{false};
   void override_x_span() noexcept {
     const double rows = info.rows;
     const double cols = info.cols;

@@ -4,10 +4,19 @@ project(
   VERSION 0.1.0
   LANGUAGES CXX)
 
+enable_language(CUDA)
+
+set(CMAKE_CUDA_STANDARD 17)
+set(CMAKE_CUDA_FLAGS --expt-relaxed-constexpr)
 # libHybractal
-add_library(Hybractal STATIC libHybractal.h libHybractal.cpp)
+add_library(Hybractal STATIC 
+  libHybractal.h 
+  libHybractal.cpp
+  cubractal.h 
+  cubractal.cu)
 target_compile_features(Hybractal PUBLIC cxx_std_20)
 target_include_directories(Hybractal INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories(Hybractal PRIVATE ${cuda_complex_include_dir})
 find_package(
   fractal_utils
   ${HYB_fractal_utils_ver}
@@ -21,17 +30,22 @@ target_link_libraries(Hybractal PUBLIC
   Boost::multiprecision
   fmt::fmt)
 
+#target_sources(Hybractal PRIVATE)
+#set_source_files_properties(cubractal.cu PROPERTIES cxx)
+
+
+
 if(${HYB_have_gmp})
   target_link_libraries(Hybractal PUBLIC HYB_gmp_cxx)
 endif()
 
 if(NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
   if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-    target_compile_options(Hybractal PRIVATE "-Ofast")
+    set_target_properties(Hybractal PROPERTIES CXX_FLAGS "-Ofast")
   endif()
 
   if(${MSVC})
-    target_compile_options(Hybractal PRIVATE "/fp:fast")
+    set_target_properties(Hybractal PROPERTIES CXX_FLAGS "/fp:fast")
   endif()
 endif()
 

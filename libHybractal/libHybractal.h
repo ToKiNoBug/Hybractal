@@ -37,6 +37,12 @@ This file is part of Hybractal.
 #include <variant>
 #include <vector>
 
+#ifdef __CUDACC__
+#define HYBRACTAL_HOST_DEVICE_FUN __host__ __device__
+#else
+#define HYBRACTAL_HOST_DEVICE_FUN
+#endif  //--expt-relaxed-constexpr
+
 template <size_t prec>
 struct float_prec_to_type {};
 
@@ -301,14 +307,15 @@ float_t hex_to_float_by_gen(std::string_view hex, int8_t gen, std::string &err,
 
 static constexpr uint16_t maxit_max = UINT16_MAX - 1;
 
-template <typename float_t>
-inline std::complex<float_t> iterate_mandelbrot(
-    std::complex<float_t> z, const std::complex<float_t> &C) noexcept {
+template <typename float_t, typename cplx_t = std::complex<float_t>>
+HYBRACTAL_HOST_DEVICE_FUN inline cplx_t iterate_mandelbrot(
+    cplx_t z, const cplx_t &C) noexcept {
   return z * z + C;
 }
+
 namespace internal {
 template <typename flt_t>
-inline auto abs(flt_t val) {
+HYBRACTAL_HOST_DEVICE_FUN inline auto abs(flt_t val) {
   if (val >= 0) {
     return val;
   }
@@ -316,27 +323,29 @@ inline auto abs(flt_t val) {
 }
 }  // namespace internal
 
-template <typename float_t>
-inline std::complex<float_t> iterate_burningship(
-    std::complex<float_t> z, const std::complex<float_t> &C) noexcept {
+template <typename float_t, typename cplx_t = std::complex<float_t>>
+HYBRACTAL_HOST_DEVICE_FUN inline cplx_t iterate_burningship(
+    cplx_t z, const cplx_t &C) noexcept {
   z.real(internal::abs(z.real()));
   z.imag(internal::abs(z.imag()));
 
   return z * z + C;
 }
 
-template <typename float_t, bool is_mandelbrot>
-inline std::complex<float_t> iterate(const std::complex<float_t> &z,
-                                     const std::complex<float_t> &C) noexcept {
+template <typename float_t, bool is_mandelbrot,
+          typename cplx_t = std::complex<float_t>>
+HYBRACTAL_HOST_DEVICE_FUN inline cplx_t iterate(const cplx_t &z,
+                                                const cplx_t &C) noexcept {
   if constexpr (is_mandelbrot) {
-    return iterate_mandelbrot(z, C);
+    return iterate_mandelbrot<float_t, cplx_t>(z, C);
   } else {
-    return iterate_burningship(z, C);
+    return iterate_burningship<float_t, cplx_t>(z, C);
   }
 }
 
-template <typename float_t>
-inline bool is_norm2_over_4(const std::complex<float_t> &z) noexcept {
+template <typename float_t, typename cplx_t = std::complex<float_t>>
+HYBRACTAL_HOST_DEVICE_FUN inline bool is_norm2_over_4(
+    const cplx_t &z) noexcept {
   return (z.real() * z.real() + z.imag() * z.imag()) >= 4;
 }
 
@@ -378,21 +387,22 @@ struct sequence {
     int it_times;
   };
 
-  template <typename float_t, size_t idx>
-  static recurse_iterate_result iterate_at(std::complex<float_t> &z,
-                                           const std::complex<float_t> &C,
-                                           int maxit) noexcept {
+  template <typename float_t, size_t idx,
+            typename cplx_t = std::complex<float_t>>
+  HYBRACTAL_HOST_DEVICE_FUN static recurse_iterate_result iterate_at(
+      cplx_t &z, const cplx_t &C, int maxit) noexcept {
     static_assert(is_index_valid(idx));
 
-    assert(!is_norm2_over_4(z));
+    // assert(!is_norm2_over_4<float_t, cplx_t>(z));
 
     if (maxit <= 0) {
       return {false, 0};
     }
 
-    const auto z_next = ::libHybractal::iterate<float_t, value_at(idx)>(z, C);
+    const auto z_next =
+        ::libHybractal::iterate<float_t, value_at(idx), cplx_t>(z, C);
 
-    const bool is_z_next_over_4 = is_norm2_over_4(z_next);
+    const bool is_z_next_over_4 = is_norm2_over_4<float_t, cplx_t>(z_next);
     // keep the latest value that not exceeds 4
     if (!is_z_next_over_4) {
       z = z_next;
@@ -407,27 +417,25 @@ struct sequence {
       return {is_z_next_over_4, 1};
     } else {
       // go on, and add the counter
-      auto next = iterate_at<float_t, idx + 1>(z, C, maxit - 1);
+      auto next = iterate_at<float_t, idx + 1, cplx_t>(z, C, maxit - 1);
 
       next.it_times++;
       return next;
     }
   }
 
-  template <typename float_t>
-  static recurse_iterate_result iterate(std::complex<float_t> &z,
-                                        const std::complex<float_t> &C,
-                                        int maxit) noexcept {
-    return iterate_at<float_t, 0>(z, C, maxit);
+  template <typename float_t, typename cplx_t = std::complex<float_t>>
+  HYBRACTAL_HOST_DEVICE_FUN static recurse_iterate_result iterate(
+      cplx_t &z, const cplx_t &C, int maxit) noexcept {
+    return iterate_at<float_t, 0, cplx_t>(z, C, maxit);
   }
 
-  template <typename float_t>
-  static int compute_age(std::complex<float_t> &z,
-                         const std::complex<float_t> &C,
-                         const int maxit) noexcept {
+  template <typename float_t, typename cplx_t = std::complex<float_t>>
+  HYBRACTAL_HOST_DEVICE_FUN static int compute_age(cplx_t &z, const cplx_t &C,
+                                                   const int maxit) noexcept {
     int counter = 0;
 
-    if (is_norm2_over_4(z)) {
+    if (is_norm2_over_4<float_t>(z)) {
       return 0;
     }
 
@@ -435,7 +443,8 @@ struct sequence {
       if (counter >= maxit) {
         break;
       }
-      recurse_iterate_result result = iterate<float_t>(z, C, maxit - counter);
+      recurse_iterate_result result =
+          iterate<float_t, cplx_t>(z, C, maxit - counter);
 
       counter += result.it_times;
 

@@ -16,6 +16,7 @@ This file is part of Hybractal.
     along with Hybractal.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+#include <cubractal.h>
 #include <fmt/format.h>
 #include <omp.h>
 
@@ -33,9 +34,23 @@ bool run_compute(const task_compute &task) noexcept {
 
   double wtime;
   wtime = omp_get_wtime();
-  libHybractal::compute_frame_by_precision(
-      file.metainfo().window_base(), file.metainfo().precision(),
-      file.metainfo().maxit, mat_age, file.have_mat_z() ? &mat_z : nullptr);
+  if (task.gpu) {
+    libHybractal::cubractal_resource gpu_rcs{task.info.rows, task.info.cols};
+    const std::string err = libHybractal::compute_frame_cuda(
+        file.metainfo().window_base(), file.metainfo().precision(),
+        file.metainfo().maxit, mat_age, (file.have_mat_z() ? &mat_z : nullptr),
+        gpu_rcs);
+
+    if (!err.empty()) {
+      std::cerr << fmt::format("Computation failed. Detail: {}", err)
+                << std::endl;
+      return false;
+    }
+  } else {
+    libHybractal::compute_frame_by_precision(
+        file.metainfo().window_base(), file.metainfo().precision(),
+        file.metainfo().maxit, mat_age, file.have_mat_z() ? &mat_z : nullptr);
+  }
   wtime = omp_get_wtime() - wtime;
 
   if (task.bechmark) {

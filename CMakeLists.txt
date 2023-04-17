@@ -31,6 +31,7 @@ include(${CMAKE_SOURCE_DIR}/cmake/configure_yalantinglibs.cmake)
 include(${CMAKE_SOURCE_DIR}/cmake/configure_nlohmann_json.cmake)
 include(${CMAKE_SOURCE_DIR}/cmake/configure_fmtlib.cmake)
 include(${CMAKE_SOURCE_DIR}/cmake/configure_boost_mp.cmake)
+include(${CMAKE_SOURCE_DIR}/cmake/configure_cuda_complex.cmake)
 
 include(${CMAKE_SOURCE_DIR}/cmake/find_gmp.cmake)
 

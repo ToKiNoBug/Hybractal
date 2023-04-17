@@ -25,13 +25,6 @@ This file is part of Hybractal.
 
 #include <optional>
 
-#ifdef __CUDA__
-#define HYBRACTAL_HOST_DEVICE_FUN __host__ __device__
-#else
-
-#define HYBRACTAL_HOST_DEVICE_FUN
-#endif //--expt-relaxed-constexpr
-
 namespace libHybractal {
 
 enum frac_val : uint8_t { fv_age = 0, fv_norm2 = 1, fv_angle = 2 };
@@ -47,8 +40,8 @@ struct hsv_render_option {
     float age_peroid;
     std::array<frac_val, 3> fv_mapping;
 
-    inline std::array<float, 3>
-    map_value(const std::array<float, 3> &src) const noexcept {
+    inline std::array<float, 3> map_value(
+        const std::array<float, 3> &src) const noexcept {
       std::array<float, 3> hsv;
 
       hsv[0] = (range_H[1] - range_H[0]) * src[fv_mapping[0]] + range_H[0];
@@ -63,12 +56,12 @@ struct hsv_render_option {
 
   static std::optional<hsv_render_option> load(const char *beg,
                                                const char *end) noexcept;
-  static std::optional<hsv_render_option>
-  load_from_file(std::string_view filename) noexcept;
+  static std::optional<hsv_render_option> load_from_file(
+      std::string_view filename) noexcept;
 };
 
 class gpu_resource {
-private:
+ private:
   size_t m_rows;
   size_t m_cols;
 
@@ -81,7 +74,7 @@ private:
   std::complex<libHybractal::hybf_store_t> *device_mat_z{nullptr};
   fractal_utils::pixel_RGB *device_mat_u8c3{nullptr};
 
-public:
+ public:
   gpu_resource(size_t rows, size_t cols);
   gpu_resource(gpu_resource &&another);
   ~gpu_resource();
@@ -108,6 +101,6 @@ void render_hsv(const fractal_utils::fractal_map &mat_age,
                 fractal_utils::fractal_map &mat_u8c3,
                 const hsv_render_option &opt, gpu_resource &rcs) noexcept;
 
-} // namespace libHybractal
+}  // namespace libHybractal
 
-#endif // HYBRACTAL_LIBRENDER_LIBRENDER_H
+#endif  // HYBRACTAL_LIBRENDER_LIBRENDER_H

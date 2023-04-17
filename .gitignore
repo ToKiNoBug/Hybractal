@@ -31,9 +31,9 @@
 *.out
 *.app
 
-
+# IDEs
+.vscode/*
+.idea/*
 compile_commands.json
 .cache/*
 3rdParty/*
-.vscode/launch.json
-zoomer/zoomer.cpp

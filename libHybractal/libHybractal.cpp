@@ -24,7 +24,6 @@ This file is part of Hybractal.
 #include "float_encode.hpp"
 #include "libHybractal.h"
 
-
 #define HYBRACTAL_PRIVATE_MATCH_TYPE_OLD(precision, buffer, bytes)          \
   if ((bytes) == sizeof(float_by_prec_t<(precision)>)) {                    \
     return *reinterpret_cast<const float_by_prec_t<(precision)> *>(buffer); \
@@ -146,8 +145,8 @@ void compute_frame_private(const fractal_utils::center_wind<float_t> &wind_C,
       std::complex<float_t> z{0, 0};
       const std::complex<float_t> C{real, imag};
 
-      int age = DECLARE_HYBRACTAL_SEQUENCE(HYBRACTAL_SEQUENCE_STR)::compute_age(
-          z, C, maxit);
+      int age = DECLARE_HYBRACTAL_SEQUENCE(
+          HYBRACTAL_SEQUENCE_STR)::compute_age<float_t>(z, C, maxit);
 
       if (age < 0) {
         age = UINT16_MAX;
